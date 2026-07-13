@@ -1,6 +1,0 @@
-.env
-bin/
-coverage.out
-*.log
-.idea/
-.vscode/
