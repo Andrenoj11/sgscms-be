@@ -12,6 +12,8 @@ import (
 	"github.com/Andrenoj11/sgscms-be/internal/repository"
 	"github.com/Andrenoj11/sgscms-be/internal/security"
 	"github.com/Andrenoj11/sgscms-be/internal/service"
+
+	"github.com/Andrenoj11/sgscms-be/internal/middleware"
 )
 
 func New(
@@ -33,16 +35,24 @@ func New(
 	cfg.App.Env,
 	db,
 )
+adminRepository :=
+	repository.NewPostgresAdminRepository(db)
 
-adminRepository := repository.NewPostgresAdminRepository(db)
 passwordHasher := security.NewPasswordHasher()
+jwtManager := security.NewJWTManager(cfg.JWT)
 
 authService := service.NewAuthService(
 	adminRepository,
 	passwordHasher,
+	jwtManager,
 )
 
 authHandler := handler.NewAuthHandler(authService)
+
+authMiddleware := middleware.NewAuthMiddleware(
+	jwtManager,
+	adminRepository,
+)
 
 r.GET("/health", healthHandler.Check)
 
@@ -53,6 +63,17 @@ adminAPI := apiV1.Group("/admin")
 authAPI := adminAPI.Group("/auth")
 {
 	authAPI.POST("/login", authHandler.Login)
+}
+
+protectedAdminAPI := adminAPI.Group("")
+protectedAdminAPI.Use(
+	authMiddleware.Authenticate(),
+)
+{
+	protectedAdminAPI.GET(
+		"/auth/me",
+		authHandler.Me,
+	)
 }
 
 	r.NoRoute(func(c *gin.Context) {

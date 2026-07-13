@@ -19,15 +19,18 @@ var (
 type AuthService struct {
 	adminRepository repository.AdminRepository
 	passwordHasher  *security.PasswordHasher
+	jwtManager      *security.JWTManager
 }
 
 func NewAuthService(
 	adminRepository repository.AdminRepository,
 	passwordHasher *security.PasswordHasher,
+	jwtManager *security.JWTManager,
 ) *AuthService {
 	return &AuthService{
 		adminRepository: adminRepository,
 		passwordHasher:  passwordHasher,
+		jwtManager:      jwtManager,
 	}
 }
 
@@ -35,15 +38,23 @@ func (s *AuthService) Login(
 	ctx context.Context,
 	request dto.LoginRequest,
 ) (*dto.LoginResponse, error) {
-	email := strings.ToLower(strings.TrimSpace(request.Email))
+	email := strings.ToLower(
+		strings.TrimSpace(request.Email),
+	)
 
-	admin, err := s.adminRepository.FindByEmail(ctx, email)
+	admin, err := s.adminRepository.FindByEmail(
+		ctx,
+		email,
+	)
 	if errors.Is(err, repository.ErrAdminNotFound) {
 		return nil, ErrInvalidCredentials
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("find admin for login: %w", err)
+		return nil, fmt.Errorf(
+			"find admin for login: %w",
+			err,
+		)
 	}
 
 	if !admin.IsActive {
@@ -55,7 +66,10 @@ func (s *AuthService) Login(
 		admin.PasswordHash,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("verify admin password: %w", err)
+		return nil, fmt.Errorf(
+			"verify admin password: %w",
+			err,
+		)
 	}
 
 	if !passwordValid {
@@ -66,15 +80,32 @@ func (s *AuthService) Login(
 		ctx,
 		admin.ID,
 	); err != nil {
-		return nil, fmt.Errorf("update admin last login: %w", err)
+		return nil, fmt.Errorf(
+			"update admin last login: %w",
+			err,
+		)
 	}
 
-	response := &dto.LoginResponse{
-		ID:    admin.ID,
-		Name:  admin.Name,
-		Email: admin.Email,
-		Role:  string(admin.Role),
+	accessToken, expiresIn, err :=
+		s.jwtManager.GenerateAccessToken(admin)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"generate admin access token: %w",
+			err,
+		)
 	}
 
-	return response, nil
+	loginResponse := &dto.LoginResponse{
+		AccessToken: accessToken,
+		TokenType:   "Bearer",
+		ExpiresIn:   expiresIn,
+		Admin: dto.AdminResponse{
+			ID:    admin.ID,
+			Name:  admin.Name,
+			Email: admin.Email,
+			Role:  string(admin.Role),
+		},
+	}
+
+	return loginResponse, nil
 }

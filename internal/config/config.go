@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -12,6 +13,7 @@ type Config struct {
 	App      AppConfig
 	Database DatabaseConfig
 	SeedAdmin SeedAdminConfig
+	JWT       JWTConfig
 }
 
 type AppConfig struct {
@@ -37,14 +39,37 @@ type SeedAdminConfig struct {
 	Password string
 }
 
+type JWTConfig struct {
+	Secret    string
+	Issuer    string
+	AccessTTL time.Duration
+}
+
 func Load() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
-		fmt.Println("warning: .env file not found, using system environment variables")
+		fmt.Println(
+			"warning: .env file not found, using system environment variables",
+		)
 	}
 
-	debug, err := strconv.ParseBool(getEnv("APP_DEBUG", "false"))
+	debug, err := strconv.ParseBool(
+		getEnv("APP_DEBUG", "false"),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("invalid APP_DEBUG value: %w", err)
+		return nil, fmt.Errorf(
+			"invalid APP_DEBUG value: %w",
+			err,
+		)
+	}
+
+	accessTTL, err := time.ParseDuration(
+		getEnv("JWT_ACCESS_TTL", "15m"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"invalid JWT_ACCESS_TTL value: %w",
+			err,
+		)
 	}
 
 	cfg := &Config{
@@ -64,14 +89,25 @@ func Load() (*Config, error) {
 			Timezone: getEnv("DB_TIMEZONE", "Asia/Jakarta"),
 		},
 		SeedAdmin: SeedAdminConfig{
-	Name:     getEnv("SEED_ADMIN_NAME", "Super Admin"),
-	Email:    getEnv("SEED_ADMIN_EMAIL", ""),
-	Password: getEnv("SEED_ADMIN_PASSWORD", ""),
-},
+			Name:     getEnv("SEED_ADMIN_NAME", "Super Admin"),
+			Email:    getEnv("SEED_ADMIN_EMAIL", ""),
+			Password: getEnv("SEED_ADMIN_PASSWORD", ""),
+		},
+		JWT: JWTConfig{
+			Secret:    getEnv("JWT_SECRET", ""),
+			Issuer:    getEnv("JWT_ISSUER", "sgscms-api"),
+			AccessTTL: accessTTL,
+		},
 	}
 
 	if cfg.Database.Password == "" {
 		return nil, fmt.Errorf("DB_PASSWORD is required")
+	}
+
+	if len(cfg.JWT.Secret) < 32 {
+		return nil, fmt.Errorf(
+			"JWT_SECRET must contain at least 32 characters",
+		)
 	}
 
 	return cfg, nil

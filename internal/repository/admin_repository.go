@@ -15,6 +15,11 @@ var (
 )
 
 type AdminRepository interface {
+	FindByID(
+		ctx context.Context,
+		adminID string,
+	) (*domain.Admin, error)
+
 	FindByEmail(
 		ctx context.Context,
 		email string,
@@ -41,6 +46,58 @@ func NewPostgresAdminRepository(
 	return &PostgresAdminRepository{
 		db: db,
 	}
+}
+
+func (r *PostgresAdminRepository) FindByID(
+	ctx context.Context,
+	adminID string,
+) (*domain.Admin, error) {
+	const query = `
+		SELECT
+			id,
+			name,
+			email,
+			password_hash,
+			role,
+			is_active,
+			last_login_at,
+			created_at,
+			updated_at
+		FROM admins
+		WHERE id = $1
+		LIMIT 1
+	`
+
+	admin := &domain.Admin{}
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		adminID,
+	).Scan(
+		&admin.ID,
+		&admin.Name,
+		&admin.Email,
+		&admin.PasswordHash,
+		&admin.Role,
+		&admin.IsActive,
+		&admin.LastLoginAt,
+		&admin.CreatedAt,
+		&admin.UpdatedAt,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrAdminNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf(
+			"find admin by ID: %w",
+			err,
+		)
+	}
+
+	return admin, nil
 }
 
 func (r *PostgresAdminRepository) FindByEmail(

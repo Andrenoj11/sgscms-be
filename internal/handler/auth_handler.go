@@ -8,6 +8,8 @@ import (
 	"github.com/Andrenoj11/sgscms-be/internal/response"
 	"github.com/Andrenoj11/sgscms-be/internal/service"
 	"github.com/gin-gonic/gin"
+
+	"github.com/Andrenoj11/sgscms-be/internal/security"
 )
 
 type AuthHandler struct {
@@ -74,5 +76,32 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		http.StatusOK,
 		"Login successful",
 		loginResponse,
+	)
+}
+
+func (h *AuthHandler) Me(c *gin.Context) {
+	admin, err := security.GetCurrentAdmin(c)
+	if err != nil {
+		response.Error(
+			c,
+			http.StatusUnauthorized,
+			"Admin is not authenticated",
+			nil,
+		)
+		return
+	}
+
+	adminResponse := dto.AdminResponse{
+		ID:    admin.ID,
+		Name:  admin.Name,
+		Email: admin.Email,
+		Role:  string(admin.Role),
+	}
+
+	response.Success(
+		c,
+		http.StatusOK,
+		"Current admin retrieved successfully",
+		adminResponse,
 	)
 }
