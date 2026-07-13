@@ -1,4 +1,4 @@
-.PHONY: run build test fmt vet tidy db-up db-down db-logs migrate-up migrate-down
+.PHONY: run build test fmt vet tidy db-up db-down db-logs migrate-up migrate-down seed
 
 run:
 	go run ./cmd/api
@@ -32,3 +32,6 @@ migrate-up:
 
 migrate-down:
 	go run ./cmd/migrate -direction=down -steps=1
+
+seed:
+	go run ./cmd/seed

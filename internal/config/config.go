@@ -11,6 +11,7 @@ import (
 type Config struct {
 	App      AppConfig
 	Database DatabaseConfig
+	SeedAdmin SeedAdminConfig
 }
 
 type AppConfig struct {
@@ -28,6 +29,12 @@ type DatabaseConfig struct {
 	Password string
 	SSLMode  string
 	Timezone string
+}
+
+type SeedAdminConfig struct {
+	Name     string
+	Email    string
+	Password string
 }
 
 func Load() (*Config, error) {
@@ -56,6 +63,11 @@ func Load() (*Config, error) {
 			SSLMode:  getEnv("DB_SSL_MODE", "disable"),
 			Timezone: getEnv("DB_TIMEZONE", "Asia/Jakarta"),
 		},
+		SeedAdmin: SeedAdminConfig{
+	Name:     getEnv("SEED_ADMIN_NAME", "Super Admin"),
+	Email:    getEnv("SEED_ADMIN_EMAIL", ""),
+	Password: getEnv("SEED_ADMIN_PASSWORD", ""),
+},
 	}
 
 	if cfg.Database.Password == "" {
