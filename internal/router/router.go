@@ -41,6 +41,9 @@ func New(
 	teamRepository :=
 		repository.NewPostgresTeamRepository(db)
 
+	newsRepository :=
+		repository.NewPostgresNewsRepository(db)
+
 	/*
 		Security
 	*/
@@ -68,6 +71,10 @@ func New(
 		practiceAreaRepository,
 	)
 
+	newsService := service.NewNewsService(
+		newsRepository,
+	)
+
 	/*
 		Handler
 	*/
@@ -89,6 +96,10 @@ func New(
 
 	teamHandler := handler.NewTeamHandler(
 		teamService,
+	)
+
+	newsHandler := handler.NewNewsHandler(
+		newsService,
 	)
 
 	/*
@@ -202,6 +213,37 @@ func New(
 			teamAPI.DELETE(
 				"/:id",
 				teamHandler.Delete,
+			)
+		}
+
+		newsAPI := protectedAdminAPI.Group(
+			"/news",
+		)
+
+		{
+			newsAPI.GET(
+				"",
+				newsHandler.List,
+			)
+
+			newsAPI.POST(
+				"",
+				newsHandler.Create,
+			)
+
+			newsAPI.GET(
+				"/:id",
+				newsHandler.GetByID,
+			)
+
+			newsAPI.PUT(
+				"/:id",
+				newsHandler.Update,
+			)
+
+			newsAPI.DELETE(
+				"/:id",
+				newsHandler.Delete,
 			)
 		}
 	}
