@@ -6,14 +6,12 @@ import (
 
 	"github.com/Andrenoj11/sgscms-be/internal/config"
 	"github.com/Andrenoj11/sgscms-be/internal/handler"
-	"github.com/Andrenoj11/sgscms-be/internal/response"
-	"github.com/gin-gonic/gin"
-
+	"github.com/Andrenoj11/sgscms-be/internal/middleware"
 	"github.com/Andrenoj11/sgscms-be/internal/repository"
+	"github.com/Andrenoj11/sgscms-be/internal/response"
 	"github.com/Andrenoj11/sgscms-be/internal/security"
 	"github.com/Andrenoj11/sgscms-be/internal/service"
-
-	"github.com/Andrenoj11/sgscms-be/internal/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func New(
@@ -24,101 +22,191 @@ func New(
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	r := gin.New()
-	r.HandleMethodNotAllowed = true
+	router := gin.New()
+	router.HandleMethodNotAllowed = true
 
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
 
-	healthHandler := handler.NewHealthHandler(
-	cfg.App.Name,
-	cfg.App.Env,
-	db,
-)
-adminRepository :=
-	repository.NewPostgresAdminRepository(db)
+	/*
+		Repository
+	*/
 
-passwordHasher := security.NewPasswordHasher()
-jwtManager := security.NewJWTManager(cfg.JWT)
+	adminRepository :=
+		repository.NewPostgresAdminRepository(db)
 
-authService := service.NewAuthService(
-	adminRepository,
-	passwordHasher,
-	jwtManager,
-)
+	practiceAreaRepository :=
+		repository.NewPostgresPracticeAreaRepository(db)
 
-authHandler := handler.NewAuthHandler(authService)
+	teamRepository :=
+		repository.NewPostgresTeamRepository(db)
 
-authMiddleware := middleware.NewAuthMiddleware(
-	jwtManager,
-	adminRepository,
-)
-practiceAreaRepository :=
-	repository.NewPostgresPracticeAreaRepository(db)
+	/*
+		Security
+	*/
 
-practiceAreaService :=
-	service.NewPracticeAreaService(
+	passwordHasher := security.NewPasswordHasher()
+	jwtManager := security.NewJWTManager(cfg.JWT)
+
+	/*
+		Service
+	*/
+
+	authService := service.NewAuthService(
+		adminRepository,
+		passwordHasher,
+		jwtManager,
+	)
+
+	practiceAreaService :=
+		service.NewPracticeAreaService(
+			practiceAreaRepository,
+		)
+
+	teamService := service.NewTeamService(
+		teamRepository,
 		practiceAreaRepository,
 	)
 
-practiceAreaHandler :=
-	handler.NewPracticeAreaHandler(
-		practiceAreaService,
+	/*
+		Handler
+	*/
+
+	healthHandler := handler.NewHealthHandler(
+		cfg.App.Name,
+		cfg.App.Env,
+		db,
 	)
 
-r.GET("/health", healthHandler.Check)
-
-apiV1 := r.Group("/api/v1")
-
-adminAPI := apiV1.Group("/admin")
-
-authAPI := adminAPI.Group("/auth")
-{
-	authAPI.POST("/login", authHandler.Login)
-}
-
-protectedAdminAPI := adminAPI.Group("")
-protectedAdminAPI.Use(
-	authMiddleware.Authenticate(),
-)
-{
-	protectedAdminAPI.GET(
-		"/auth/me",
-		authHandler.Me,
-	)
-}
-
-practiceAreaAPI := protectedAdminAPI.Group(
-	"/practice-areas",
-)
-{
-	practiceAreaAPI.GET(
-		"",
-		practiceAreaHandler.List,
+	authHandler := handler.NewAuthHandler(
+		authService,
 	)
 
-	practiceAreaAPI.POST(
-		"",
-		practiceAreaHandler.Create,
+	practiceAreaHandler :=
+		handler.NewPracticeAreaHandler(
+			practiceAreaService,
+		)
+
+	teamHandler := handler.NewTeamHandler(
+		teamService,
 	)
 
-	practiceAreaAPI.GET(
-		"/:id",
-		practiceAreaHandler.GetByID,
+	/*
+		Middleware
+	*/
+
+	authMiddleware :=
+		middleware.NewAuthMiddleware(
+			jwtManager,
+			adminRepository,
+		)
+
+	/*
+		General routes
+	*/
+
+	router.GET(
+		"/health",
+		healthHandler.Check,
 	)
 
-	practiceAreaAPI.PUT(
-		"/:id",
-		practiceAreaHandler.Update,
+	/*
+		API version 1
+	*/
+
+	apiV1 := router.Group("/api/v1")
+
+	/*
+		Admin routes
+	*/
+
+	adminAPI := apiV1.Group("/admin")
+
+	authAPI := adminAPI.Group("/auth")
+	{
+		authAPI.POST(
+			"/login",
+			authHandler.Login,
+		)
+	}
+
+	protectedAdminAPI := adminAPI.Group("")
+
+	protectedAdminAPI.Use(
+		authMiddleware.Authenticate(),
 	)
 
-	practiceAreaAPI.DELETE(
-		"/:id",
-		practiceAreaHandler.Delete,
-	)
-}
+	{
+		protectedAdminAPI.GET(
+			"/auth/me",
+			authHandler.Me,
+		)
 
-	r.NoRoute(func(c *gin.Context) {
+		practiceAreaAPI :=
+			protectedAdminAPI.Group(
+				"/practice-areas",
+			)
+
+		{
+			practiceAreaAPI.GET(
+				"",
+				practiceAreaHandler.List,
+			)
+
+			practiceAreaAPI.POST(
+				"",
+				practiceAreaHandler.Create,
+			)
+
+			practiceAreaAPI.GET(
+				"/:id",
+				practiceAreaHandler.GetByID,
+			)
+
+			practiceAreaAPI.PUT(
+				"/:id",
+				practiceAreaHandler.Update,
+			)
+
+			practiceAreaAPI.DELETE(
+				"/:id",
+				practiceAreaHandler.Delete,
+			)
+		}
+
+		teamAPI := protectedAdminAPI.Group(
+			"/teams",
+		)
+
+		{
+			teamAPI.GET(
+				"",
+				teamHandler.List,
+			)
+
+			teamAPI.POST(
+				"",
+				teamHandler.Create,
+			)
+
+			teamAPI.GET(
+				"/:id",
+				teamHandler.GetByID,
+			)
+
+			teamAPI.PUT(
+				"/:id",
+				teamHandler.Update,
+			)
+
+			teamAPI.DELETE(
+				"/:id",
+				teamHandler.Delete,
+			)
+		}
+	}
+
+	router.NoRoute(func(c *gin.Context) {
 		response.Error(
 			c,
 			http.StatusNotFound,
@@ -127,7 +215,7 @@ practiceAreaAPI := protectedAdminAPI.Group(
 		)
 	})
 
-	r.NoMethod(func(c *gin.Context) {
+	router.NoMethod(func(c *gin.Context) {
 		response.Error(
 			c,
 			http.StatusMethodNotAllowed,
@@ -136,5 +224,5 @@ practiceAreaAPI := protectedAdminAPI.Group(
 		)
 	})
 
-	return r
+	return router
 }

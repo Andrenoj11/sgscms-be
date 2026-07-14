@@ -371,3 +371,94 @@ func (r *PostgresPracticeAreaRepository) List(
 
 	return practiceAreas, total, nil
 }
+
+func (r *PostgresPracticeAreaRepository) Update(
+	ctx context.Context,
+	practiceArea *domain.PracticeArea,
+) error {
+	const query = `
+		UPDATE practice_areas
+		SET
+			name = $2,
+			slug = $3,
+			description = $4,
+			is_active = $5,
+			display_order = $6,
+			updated_by = $7,
+			updated_at = NOW()
+		WHERE id = $1
+		  AND deleted_at IS NULL
+		RETURNING updated_at
+	`
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		practiceArea.ID,
+		practiceArea.Name,
+		practiceArea.Slug,
+		practiceArea.Description,
+		practiceArea.IsActive,
+		practiceArea.DisplayOrder,
+		practiceArea.UpdatedBy,
+	).Scan(
+		&practiceArea.UpdatedAt,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrPracticeAreaNotFound
+	}
+
+	if err != nil {
+		return fmt.Errorf(
+			"update practice area: %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
+func (r *PostgresPracticeAreaRepository) SoftDelete(
+	ctx context.Context,
+	id string,
+	adminID string,
+) error {
+	const query = `
+		UPDATE practice_areas
+		SET
+			deleted_at = NOW(),
+			updated_at = NOW(),
+			updated_by = $2,
+			is_active = FALSE
+		WHERE id = $1
+		  AND deleted_at IS NULL
+	`
+
+	result, err := r.db.ExecContext(
+		ctx,
+		query,
+		id,
+		adminID,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"soft delete practice area: %w",
+			err,
+		)
+	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf(
+			"read affected rows after deleting practice area: %w",
+			err,
+		)
+	}
+
+	if affectedRows == 0 {
+		return ErrPracticeAreaNotFound
+	}
+
+	return nil
+}
