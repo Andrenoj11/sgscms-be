@@ -10,10 +10,11 @@ import (
 )
 
 type Config struct {
-	App      AppConfig
-	Database DatabaseConfig
+	App       AppConfig
+	Database  DatabaseConfig
 	SeedAdmin SeedAdminConfig
 	JWT       JWTConfig
+	Storage   StorageConfig
 }
 
 type AppConfig struct {
@@ -45,6 +46,12 @@ type JWTConfig struct {
 	AccessTTL time.Duration
 }
 
+type StorageConfig struct {
+	Directory    string
+	BaseURL      string
+	MaxImageSize int64
+}
+
 func Load() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
 		fmt.Println(
@@ -72,6 +79,21 @@ func Load() (*Config, error) {
 		)
 	}
 
+	maxImageSize, err := strconv.ParseInt(
+		getEnv(
+			"UPLOAD_MAX_IMAGE_SIZE",
+			"2097152",
+		),
+		10,
+		64,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"invalid UPLOAD_MAX_IMAGE_SIZE value: %w",
+			err,
+		)
+	}
+
 	cfg := &Config{
 		App: AppConfig{
 			Name:  getEnv("APP_NAME", "SGS CMS API"),
@@ -89,19 +111,47 @@ func Load() (*Config, error) {
 			Timezone: getEnv("DB_TIMEZONE", "Asia/Jakarta"),
 		},
 		SeedAdmin: SeedAdminConfig{
-			Name:     getEnv("SEED_ADMIN_NAME", "Super Admin"),
-			Email:    getEnv("SEED_ADMIN_EMAIL", ""),
-			Password: getEnv("SEED_ADMIN_PASSWORD", ""),
+			Name: getEnv(
+				"SEED_ADMIN_NAME",
+				"Super Admin",
+			),
+			Email: getEnv(
+				"SEED_ADMIN_EMAIL",
+				"",
+			),
+			Password: getEnv(
+				"SEED_ADMIN_PASSWORD",
+				"",
+			),
 		},
 		JWT: JWTConfig{
-			Secret:    getEnv("JWT_SECRET", ""),
-			Issuer:    getEnv("JWT_ISSUER", "sgscms-api"),
+			Secret: getEnv(
+				"JWT_SECRET",
+				"",
+			),
+			Issuer: getEnv(
+				"JWT_ISSUER",
+				"sgscms-api",
+			),
 			AccessTTL: accessTTL,
+		},
+		Storage: StorageConfig{
+			Directory: getEnv(
+				"UPLOAD_DIRECTORY",
+				"uploads",
+			),
+			BaseURL: getEnv(
+				"UPLOAD_BASE_URL",
+				"http://localhost:8080/uploads",
+			),
+			MaxImageSize: maxImageSize,
 		},
 	}
 
 	if cfg.Database.Password == "" {
-		return nil, fmt.Errorf("DB_PASSWORD is required")
+		return nil, fmt.Errorf(
+			"DB_PASSWORD is required",
+		)
 	}
 
 	if len(cfg.JWT.Secret) < 32 {
@@ -110,10 +160,31 @@ func Load() (*Config, error) {
 		)
 	}
 
+	if cfg.Storage.Directory == "" {
+		return nil, fmt.Errorf(
+			"UPLOAD_DIRECTORY is required",
+		)
+	}
+
+	if cfg.Storage.BaseURL == "" {
+		return nil, fmt.Errorf(
+			"UPLOAD_BASE_URL is required",
+		)
+	}
+
+	if cfg.Storage.MaxImageSize <= 0 {
+		return nil, fmt.Errorf(
+			"UPLOAD_MAX_IMAGE_SIZE must be greater than zero",
+		)
+	}
+
 	return cfg, nil
 }
 
-func getEnv(key string, fallback string) string {
+func getEnv(
+	key string,
+	fallback string,
+) string {
 	value := os.Getenv(key)
 
 	if value == "" {

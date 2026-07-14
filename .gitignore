@@ -4,3 +4,4 @@ node_modules/
 tmp/
 coverage.out
 .DS_Store
+uploads/

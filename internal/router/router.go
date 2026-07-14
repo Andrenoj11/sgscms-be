@@ -3,6 +3,7 @@ package router
 import (
 	"database/sql"
 	"net/http"
+	"os"
 
 	"github.com/Andrenoj11/sgscms-be/internal/config"
 	"github.com/Andrenoj11/sgscms-be/internal/handler"
@@ -82,6 +83,10 @@ func New(
 		publicRepository,
 	)
 
+	uploadService := service.NewUploadService(
+		cfg.Storage,
+	)
+
 	/*
 		Handler
 	*/
@@ -113,6 +118,10 @@ func New(
 		publicService,
 	)
 
+	uploadHandler := handler.NewUploadHandler(
+		uploadService,
+	)
+
 	/*
 		Middleware
 	*/
@@ -124,12 +133,31 @@ func New(
 		)
 
 	/*
+		Upload directory
+	*/
+
+	if err := os.MkdirAll(
+		cfg.Storage.Directory,
+		0o755,
+	); err != nil {
+		panic(
+			"failed to create upload directory: " +
+				err.Error(),
+		)
+	}
+
+	/*
 		General routes
 	*/
 
 	router.GET(
 		"/health",
 		healthHandler.Check,
+	)
+
+	router.Static(
+		"/uploads",
+		cfg.Storage.Directory,
 	)
 
 	/*
@@ -195,6 +223,17 @@ func New(
 			"/auth/me",
 			authHandler.Me,
 		)
+
+		uploadAPI := protectedAdminAPI.Group(
+			"/uploads",
+		)
+
+		{
+			uploadAPI.POST(
+				"/images",
+				uploadHandler.UploadImage,
+			)
+		}
 
 		practiceAreaAPI :=
 			protectedAdminAPI.Group(
