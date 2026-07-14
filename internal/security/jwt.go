@@ -15,14 +15,21 @@ const (
 )
 
 var (
-	ErrInvalidToken = errors.New("invalid token")
-	ErrExpiredToken = errors.New("token has expired")
+	ErrInvalidToken = errors.New(
+		"invalid token",
+	)
+
+	ErrExpiredToken = errors.New(
+		"token has expired",
+	)
 )
 
 type AccessTokenClaims struct {
 	Email     string `json:"email"`
 	Role      string `json:"role"`
+	SessionID string `json:"session_id"`
 	TokenType string `json:"token_type"`
+
 	jwt.RegisteredClaims
 }
 
@@ -46,10 +53,11 @@ func NewJWTManager(
 
 func (m *JWTManager) GenerateAccessToken(
 	admin *domain.Admin,
+	sessionID string,
 ) (
-	tokenString string,
-	expiresIn int64,
-	err error,
+	string,
+	int64,
+	error,
 ) {
 	now := m.now().UTC()
 	expiresAt := now.Add(m.accessTTL)
@@ -57,6 +65,7 @@ func (m *JWTManager) GenerateAccessToken(
 	claims := AccessTokenClaims{
 		Email:     admin.Email,
 		Role:      string(admin.Role),
+		SessionID: sessionID,
 		TokenType: TokenTypeAccess,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   admin.ID,
@@ -72,7 +81,9 @@ func (m *JWTManager) GenerateAccessToken(
 		claims,
 	)
 
-	signedToken, err := token.SignedString(m.secret)
+	signedToken, err := token.SignedString(
+		m.secret,
+	)
 	if err != nil {
 		return "", 0, fmt.Errorf(
 			"sign access token: %w",
@@ -80,7 +91,9 @@ func (m *JWTManager) GenerateAccessToken(
 		)
 	}
 
-	return signedToken, int64(m.accessTTL.Seconds()), nil
+	return signedToken,
+		int64(m.accessTTL.Seconds()),
+		nil
 }
 
 func (m *JWTManager) ParseAccessToken(
@@ -92,18 +105,18 @@ func (m *JWTManager) ParseAccessToken(
 		tokenString,
 		claims,
 		func(token *jwt.Token) (any, error) {
-			if token.Method != jwt.SigningMethodHS256 {
-				return nil, fmt.Errorf(
-					"%w: unexpected signing method",
-					ErrInvalidToken,
-				)
+			if token.Method !=
+				jwt.SigningMethodHS256 {
+				return nil, ErrInvalidToken
 			}
 
 			return m.secret, nil
 		},
-		jwt.WithValidMethods([]string{
-			jwt.SigningMethodHS256.Alg(),
-		}),
+		jwt.WithValidMethods(
+			[]string{
+				jwt.SigningMethodHS256.Alg(),
+			},
+		),
 		jwt.WithIssuer(m.issuer),
 		jwt.WithExpirationRequired(),
 		jwt.WithIssuedAt(),
@@ -111,7 +124,10 @@ func (m *JWTManager) ParseAccessToken(
 	)
 
 	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) {
+		if errors.Is(
+			err,
+			jwt.ErrTokenExpired,
+		) {
 			return nil, ErrExpiredToken
 		}
 
@@ -122,11 +138,9 @@ func (m *JWTManager) ParseAccessToken(
 		return nil, ErrInvalidToken
 	}
 
-	if claims.TokenType != TokenTypeAccess {
-		return nil, ErrInvalidToken
-	}
-
-	if claims.Subject == "" {
+	if claims.TokenType != TokenTypeAccess ||
+		claims.Subject == "" ||
+		claims.SessionID == "" {
 		return nil, ErrInvalidToken
 	}
 

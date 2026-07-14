@@ -26,15 +26,32 @@ func New(
 	router := gin.New()
 	router.HandleMethodNotAllowed = true
 
+	/*
+		|--------------------------------------------------------------------------
+		| Global Middleware
+		|--------------------------------------------------------------------------
+	*/
+
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
+	router.Use(
+		middleware.CORS(
+			cfg.Security.CORSAllowedOrigins,
+		),
+	)
+
 	/*
-		Repository
+		|--------------------------------------------------------------------------
+		| Repository
+		|--------------------------------------------------------------------------
 	*/
 
 	adminRepository :=
 		repository.NewPostgresAdminRepository(db)
+
+	adminSessionRepository :=
+		repository.NewPostgresAdminSessionRepository(db)
 
 	practiceAreaRepository :=
 		repository.NewPostgresPracticeAreaRepository(db)
@@ -49,20 +66,40 @@ func New(
 		repository.NewPostgresPublicRepository(db)
 
 	/*
-		Security
+		|--------------------------------------------------------------------------
+		| Security
+		|--------------------------------------------------------------------------
 	*/
 
 	passwordHasher := security.NewPasswordHasher()
-	jwtManager := security.NewJWTManager(cfg.JWT)
+
+	jwtManager := security.NewJWTManager(
+		cfg.JWT,
+	)
+
+	secretCipher, err := security.NewSecretCipher(
+		cfg.Security.SignatureEncryptionKey,
+	)
+	if err != nil {
+		panic(
+			"failed to initialize signature cipher: " +
+				err.Error(),
+		)
+	}
 
 	/*
-		Service
+		|--------------------------------------------------------------------------
+		| Service
+		|--------------------------------------------------------------------------
 	*/
 
 	authService := service.NewAuthService(
 		adminRepository,
+		adminSessionRepository,
 		passwordHasher,
 		jwtManager,
+		secretCipher,
+		cfg.JWT.RefreshTTL,
 	)
 
 	practiceAreaService :=
@@ -88,7 +125,9 @@ func New(
 	)
 
 	/*
-		Handler
+		|--------------------------------------------------------------------------
+		| Handler
+		|--------------------------------------------------------------------------
 	*/
 
 	healthHandler := handler.NewHealthHandler(
@@ -99,6 +138,8 @@ func New(
 
 	authHandler := handler.NewAuthHandler(
 		authService,
+		cfg.JWT.RefreshTTL,
+		cfg.App.Env == "production",
 	)
 
 	practiceAreaHandler :=
@@ -123,17 +164,35 @@ func New(
 	)
 
 	/*
-		Middleware
+		|--------------------------------------------------------------------------
+		| Application Middleware
+		|--------------------------------------------------------------------------
 	*/
 
 	authMiddleware :=
 		middleware.NewAuthMiddleware(
 			jwtManager,
 			adminRepository,
+			adminSessionRepository,
+		)
+
+	signatureMiddleware :=
+		middleware.NewSignatureMiddleware(
+			adminSessionRepository,
+			secretCipher,
+			cfg.Security.SignatureMaxAge,
+		)
+
+	loginRateLimiter :=
+		middleware.NewRateLimiter(
+			cfg.Security.LoginRateLimit,
+			cfg.Security.LoginRateWindow,
 		)
 
 	/*
-		Upload directory
+		|--------------------------------------------------------------------------
+		| Upload Directory
+		|--------------------------------------------------------------------------
 	*/
 
 	if err := os.MkdirAll(
@@ -147,7 +206,9 @@ func New(
 	}
 
 	/*
-		General routes
+		|--------------------------------------------------------------------------
+		| General Routes
+		|--------------------------------------------------------------------------
 	*/
 
 	router.GET(
@@ -161,13 +222,20 @@ func New(
 	)
 
 	/*
-		API version 1
+		|--------------------------------------------------------------------------
+		| API Version 1
+		|--------------------------------------------------------------------------
 	*/
 
 	apiV1 := router.Group("/api/v1")
 
 	/*
-		Public routes
+		|--------------------------------------------------------------------------
+		| Public Routes
+		|--------------------------------------------------------------------------
+		|
+		| Route berikut tidak membutuhkan JWT maupun X-Signature.
+		|
 	*/
 
 	publicAPI := apiV1.Group("/public")
@@ -199,136 +267,231 @@ func New(
 	}
 
 	/*
-		Admin routes
+		|--------------------------------------------------------------------------
+		| Admin Routes
+		|--------------------------------------------------------------------------
 	*/
 
 	adminAPI := apiV1.Group("/admin")
+
+	/*
+		|--------------------------------------------------------------------------
+		| Public Authentication Routes
+		|--------------------------------------------------------------------------
+		|
+		| Login, refresh, dan logout tidak membutuhkan access token.
+		| Refresh token dikirim melalui HttpOnly cookie.
+		|
+	*/
 
 	authAPI := adminAPI.Group("/auth")
 	{
 		authAPI.POST(
 			"/login",
+			loginRateLimiter.LimitByIP(),
 			authHandler.Login,
+		)
+
+		authAPI.POST(
+			"/refresh",
+			authHandler.Refresh,
+		)
+
+		authAPI.POST(
+			"/logout",
+			authHandler.Logout,
 		)
 	}
 
-	protectedAdminAPI := adminAPI.Group("")
+	/*
+		|--------------------------------------------------------------------------
+		| JWT Protected Admin Routes
+		|--------------------------------------------------------------------------
+		|
+		| Semua route di grup ini membutuhkan access token.
+		|
+	*/
 
-	protectedAdminAPI.Use(
+	authenticatedAdminAPI :=
+		adminAPI.Group("")
+
+	authenticatedAdminAPI.Use(
 		authMiddleware.Authenticate(),
 	)
 
-	{
-		protectedAdminAPI.GET(
-			"/auth/me",
-			authHandler.Me,
-		)
+	/*
+		|--------------------------------------------------------------------------
+		| Upload Routes
+		|--------------------------------------------------------------------------
+		|
+		| Upload hanya menggunakan JWT.
+		| Multipart body tidak menggunakan X-Signature.
+		|
+	*/
 
-		uploadAPI := protectedAdminAPI.Group(
+	uploadAPI :=
+		authenticatedAdminAPI.Group(
 			"/uploads",
 		)
 
-		{
-			uploadAPI.POST(
-				"/images",
-				uploadHandler.UploadImage,
-			)
-		}
+	{
+		uploadAPI.POST(
+			"/images",
+			uploadHandler.UploadImage,
+		)
+	}
 
-		practiceAreaAPI :=
-			protectedAdminAPI.Group(
-				"/practice-areas",
-			)
+	/*
+		|--------------------------------------------------------------------------
+		| JWT + X-Signature Protected Routes
+		|--------------------------------------------------------------------------
+		|
+		| Semua route di grup ini membutuhkan:
+		|
+		| Authorization
+		| X-Timestamp
+		| X-Nonce
+		| X-Signature
+		|
+	*/
 
-		{
-			practiceAreaAPI.GET(
-				"",
-				practiceAreaHandler.List,
-			)
+	signedAdminAPI :=
+		authenticatedAdminAPI.Group("")
 
-			practiceAreaAPI.POST(
-				"",
-				practiceAreaHandler.Create,
-			)
+	signedAdminAPI.Use(
+		signatureMiddleware.Verify(),
+	)
 
-			practiceAreaAPI.GET(
-				"/:id",
-				practiceAreaHandler.GetByID,
-			)
+	/*
+		|--------------------------------------------------------------------------
+		| Current Admin
+		|--------------------------------------------------------------------------
+	*/
 
-			practiceAreaAPI.PUT(
-				"/:id",
-				practiceAreaHandler.Update,
-			)
+	signedAdminAPI.GET(
+		"/auth/me",
+		authHandler.Me,
+	)
 
-			practiceAreaAPI.DELETE(
-				"/:id",
-				practiceAreaHandler.Delete,
-			)
-		}
+	/*
+		|--------------------------------------------------------------------------
+		| Practice Area Routes
+		|--------------------------------------------------------------------------
+	*/
 
-		teamAPI := protectedAdminAPI.Group(
+	practiceAreaAPI :=
+		signedAdminAPI.Group(
+			"/practice-areas",
+		)
+
+	{
+		practiceAreaAPI.GET(
+			"",
+			practiceAreaHandler.List,
+		)
+
+		practiceAreaAPI.POST(
+			"",
+			practiceAreaHandler.Create,
+		)
+
+		practiceAreaAPI.GET(
+			"/:id",
+			practiceAreaHandler.GetByID,
+		)
+
+		practiceAreaAPI.PUT(
+			"/:id",
+			practiceAreaHandler.Update,
+		)
+
+		practiceAreaAPI.DELETE(
+			"/:id",
+			practiceAreaHandler.Delete,
+		)
+	}
+
+	/*
+		|--------------------------------------------------------------------------
+		| Team Routes
+		|--------------------------------------------------------------------------
+	*/
+
+	teamAPI :=
+		signedAdminAPI.Group(
 			"/teams",
 		)
 
-		{
-			teamAPI.GET(
-				"",
-				teamHandler.List,
-			)
+	{
+		teamAPI.GET(
+			"",
+			teamHandler.List,
+		)
 
-			teamAPI.POST(
-				"",
-				teamHandler.Create,
-			)
+		teamAPI.POST(
+			"",
+			teamHandler.Create,
+		)
 
-			teamAPI.GET(
-				"/:id",
-				teamHandler.GetByID,
-			)
+		teamAPI.GET(
+			"/:id",
+			teamHandler.GetByID,
+		)
 
-			teamAPI.PUT(
-				"/:id",
-				teamHandler.Update,
-			)
+		teamAPI.PUT(
+			"/:id",
+			teamHandler.Update,
+		)
 
-			teamAPI.DELETE(
-				"/:id",
-				teamHandler.Delete,
-			)
-		}
+		teamAPI.DELETE(
+			"/:id",
+			teamHandler.Delete,
+		)
+	}
 
-		newsAPI := protectedAdminAPI.Group(
+	/*
+		|--------------------------------------------------------------------------
+		| News Routes
+		|--------------------------------------------------------------------------
+	*/
+
+	newsAPI :=
+		signedAdminAPI.Group(
 			"/news",
 		)
 
-		{
-			newsAPI.GET(
-				"",
-				newsHandler.List,
-			)
+	{
+		newsAPI.GET(
+			"",
+			newsHandler.List,
+		)
 
-			newsAPI.POST(
-				"",
-				newsHandler.Create,
-			)
+		newsAPI.POST(
+			"",
+			newsHandler.Create,
+		)
 
-			newsAPI.GET(
-				"/:id",
-				newsHandler.GetByID,
-			)
+		newsAPI.GET(
+			"/:id",
+			newsHandler.GetByID,
+		)
 
-			newsAPI.PUT(
-				"/:id",
-				newsHandler.Update,
-			)
+		newsAPI.PUT(
+			"/:id",
+			newsHandler.Update,
+		)
 
-			newsAPI.DELETE(
-				"/:id",
-				newsHandler.Delete,
-			)
-		}
+		newsAPI.DELETE(
+			"/:id",
+			newsHandler.Delete,
+		)
 	}
+
+	/*
+		|--------------------------------------------------------------------------
+		| Route Not Found
+		|--------------------------------------------------------------------------
+	*/
 
 	router.NoRoute(func(c *gin.Context) {
 		response.Error(
@@ -338,6 +501,12 @@ func New(
 			nil,
 		)
 	})
+
+	/*
+		|--------------------------------------------------------------------------
+		| HTTP Method Not Allowed
+		|--------------------------------------------------------------------------
+	*/
 
 	router.NoMethod(func(c *gin.Context) {
 		response.Error(

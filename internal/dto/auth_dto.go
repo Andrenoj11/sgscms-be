@@ -14,8 +14,35 @@ type AdminResponse struct {
 }
 
 type LoginResponse struct {
-	AccessToken string        `json:"access_token"`
-	TokenType   string        `json:"token_type"`
-	ExpiresIn   int64         `json:"expires_in"`
-	Admin       AdminResponse `json:"admin"`
+	AccessToken string `json:"access_token"`
+
+	TokenType string `json:"token_type"`
+
+	ExpiresIn int64 `json:"expires_in"`
+
+	SigningKey string `json:"signing_key"`
+
+	Admin AdminResponse `json:"admin"`
+}
+
+type RefreshResponse struct {
+	AccessToken string `json:"access_token"`
+
+	TokenType string `json:"token_type"`
+
+	ExpiresIn int64 `json:"expires_in"`
+
+	SigningKey string `json:"signing_key"`
+}
+
+type AuthResult struct {
+	RefreshToken string
+
+	Response LoginResponse
+}
+
+type RefreshResult struct {
+	RefreshToken string
+
+	Response RefreshResponse
 }

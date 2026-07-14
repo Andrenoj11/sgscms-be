@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Andrenoj11/sgscms-be/internal/repository"
 	"github.com/Andrenoj11/sgscms-be/internal/response"
@@ -12,17 +13,22 @@ import (
 )
 
 type AuthMiddleware struct {
-	jwtManager      *security.JWTManager
+	jwtManager *security.JWTManager
+
 	adminRepository repository.AdminRepository
+
+	sessionRepository repository.AdminSessionRepository
 }
 
 func NewAuthMiddleware(
 	jwtManager *security.JWTManager,
 	adminRepository repository.AdminRepository,
+	sessionRepository repository.AdminSessionRepository,
 ) *AuthMiddleware {
 	return &AuthMiddleware{
-		jwtManager:      jwtManager,
-		adminRepository: adminRepository,
+		jwtManager:        jwtManager,
+		adminRepository:   adminRepository,
+		sessionRepository: sessionRepository,
 	}
 }
 
@@ -44,7 +50,10 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		)
 
 		switch {
-		case errors.Is(err, security.ErrExpiredToken):
+		case errors.Is(
+			err,
+			security.ErrExpiredToken,
+		):
 			abortUnauthorized(
 				c,
 				"Authentication token has expired",
@@ -59,20 +68,61 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		admin, err := m.adminRepository.FindByID(
-			c.Request.Context(),
-			claims.Subject,
-		)
+		session, err :=
+			m.sessionRepository.FindByID(
+				c.Request.Context(),
+				claims.SessionID,
+			)
 
-		switch {
-		case errors.Is(err, repository.ErrAdminNotFound):
+		if errors.Is(
+			err,
+			repository.ErrAdminSessionNotFound,
+		) {
+			abortUnauthorized(
+				c,
+				"Authentication session is invalid",
+			)
+			return
+		}
+
+		if err != nil {
+			response.Error(
+				c,
+				http.StatusInternalServerError,
+				"Internal server error",
+				nil,
+			)
+			c.Abort()
+			return
+		}
+
+		if !session.IsActive(time.Now().UTC()) ||
+			session.AdminID != claims.Subject {
+			abortUnauthorized(
+				c,
+				"Authentication session is invalid",
+			)
+			return
+		}
+
+		admin, err :=
+			m.adminRepository.FindByID(
+				c.Request.Context(),
+				claims.Subject,
+			)
+
+		if errors.Is(
+			err,
+			repository.ErrAdminNotFound,
+		) {
 			abortUnauthorized(
 				c,
 				"Admin account was not found",
 			)
 			return
+		}
 
-		case err != nil:
+		if err != nil {
 			response.Error(
 				c,
 				http.StatusInternalServerError,
@@ -96,6 +146,11 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 
 		security.SetCurrentAdmin(c, admin)
 
+		security.SetCurrentSessionID(
+			c,
+			session.ID,
+		)
+
 		c.Next()
 	}
 }
@@ -103,17 +158,20 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 func extractBearerToken(
 	authorizationHeader string,
 ) (string, error) {
-	parts := strings.Fields(authorizationHeader)
+	parts := strings.Fields(
+		authorizationHeader,
+	)
 
-	if len(parts) != 2 {
-		return "", security.ErrInvalidToken
-	}
-
-	if !strings.EqualFold(parts[0], "Bearer") {
+	if len(parts) != 2 ||
+		!strings.EqualFold(
+			parts[0],
+			"Bearer",
+		) {
 		return "", security.ErrInvalidToken
 	}
 
 	token := strings.TrimSpace(parts[1])
+
 	if token == "" {
 		return "", security.ErrInvalidToken
 	}
