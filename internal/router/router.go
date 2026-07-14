@@ -53,6 +53,18 @@ authMiddleware := middleware.NewAuthMiddleware(
 	jwtManager,
 	adminRepository,
 )
+practiceAreaRepository :=
+	repository.NewPostgresPracticeAreaRepository(db)
+
+practiceAreaService :=
+	service.NewPracticeAreaService(
+		practiceAreaRepository,
+	)
+
+practiceAreaHandler :=
+	handler.NewPracticeAreaHandler(
+		practiceAreaService,
+	)
 
 r.GET("/health", healthHandler.Check)
 
@@ -73,6 +85,36 @@ protectedAdminAPI.Use(
 	protectedAdminAPI.GET(
 		"/auth/me",
 		authHandler.Me,
+	)
+}
+
+practiceAreaAPI := protectedAdminAPI.Group(
+	"/practice-areas",
+)
+{
+	practiceAreaAPI.GET(
+		"",
+		practiceAreaHandler.List,
+	)
+
+	practiceAreaAPI.POST(
+		"",
+		practiceAreaHandler.Create,
+	)
+
+	practiceAreaAPI.GET(
+		"/:id",
+		practiceAreaHandler.GetByID,
+	)
+
+	practiceAreaAPI.PUT(
+		"/:id",
+		practiceAreaHandler.Update,
+	)
+
+	practiceAreaAPI.DELETE(
+		"/:id",
+		practiceAreaHandler.Delete,
 	)
 }
 

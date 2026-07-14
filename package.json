@@ -1,0 +1,11 @@
+{
+  "name": "sgscms-be",
+  "private": true,
+  "scripts": {
+    "format": "prettier . --write && go fmt ./...",
+    "format:check": "prettier . --check"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}
