@@ -44,6 +44,9 @@ func New(
 	newsRepository :=
 		repository.NewPostgresNewsRepository(db)
 
+	publicRepository :=
+		repository.NewPostgresPublicRepository(db)
+
 	/*
 		Security
 	*/
@@ -75,6 +78,10 @@ func New(
 		newsRepository,
 	)
 
+	publicService := service.NewPublicService(
+		publicRepository,
+	)
+
 	/*
 		Handler
 	*/
@@ -102,6 +109,10 @@ func New(
 		newsService,
 	)
 
+	publicHandler := handler.NewPublicHandler(
+		publicService,
+	)
+
 	/*
 		Middleware
 	*/
@@ -126,6 +137,38 @@ func New(
 	*/
 
 	apiV1 := router.Group("/api/v1")
+
+	/*
+		Public routes
+	*/
+
+	publicAPI := apiV1.Group("/public")
+	{
+		publicAPI.GET(
+			"/practice-areas",
+			publicHandler.ListPracticeAreas,
+		)
+
+		publicAPI.GET(
+			"/teams",
+			publicHandler.ListTeams,
+		)
+
+		publicAPI.GET(
+			"/teams/:slug",
+			publicHandler.GetTeamBySlug,
+		)
+
+		publicAPI.GET(
+			"/news",
+			publicHandler.ListNews,
+		)
+
+		publicAPI.GET(
+			"/news/:slug",
+			publicHandler.GetNewsBySlug,
+		)
+	}
 
 	/*
 		Admin routes
