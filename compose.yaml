@@ -1,0 +1,114 @@
+name: sgscms
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: sgscms-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DB_NAME:-sgscms}
+      POSTGRES_USER: ${DB_USER:-sgscms}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      TZ: ${DB_TIMEZONE:-Asia/Jakarta}
+      PGTZ: ${DB_TIMEZONE:-Asia/Jakarta}
+
+    ports:
+      - '${DB_EXPOSED_PORT:-5432}:5432'
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${DB_USER:-sgscms} -d ${DB_NAME:-sgscms}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    networks:
+      - sgscms-network
+
+  migrate:
+    image: migrate/migrate:v4.18.3
+    container_name: sgscms-migrate
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    volumes:
+      - ./migrations:/migrations:ro
+
+    command:
+      [
+        '-path',
+        '/migrations',
+        '-database',
+        'postgres://${DB_USER:-sgscms}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-sgscms}?sslmode=${DB_SSL_MODE:-disable}',
+        'up',
+      ]
+
+    restart: 'no'
+
+    networks:
+      - sgscms-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: sgscms-api
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      migrate:
+        condition: service_completed_successfully
+
+    env_file:
+      - .env
+
+    environment:
+      APP_PORT: '8080'
+
+      DB_HOST: postgres
+      DB_PORT: '5432'
+
+      UPLOAD_DIRECTORY: /app/uploads
+      UPLOAD_BASE_URL: ${UPLOAD_BASE_URL:-http://localhost:8080/uploads}
+
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+
+    ports:
+      - '${APP_EXPOSED_PORT:-8080}:8080'
+
+    volumes:
+      - uploads_data:/app/uploads
+
+    healthcheck:
+      test:
+        ['CMD', 'wget', '--quiet', '--spider', 'http://127.0.0.1:8080/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    networks:
+      - sgscms-network
+
+volumes:
+  postgres_data:
+    name: sgscms-postgres-data
+
+  uploads_data:
+    name: sgscms-uploads-data
+
+networks:
+  sgscms-network:
+    name: sgscms-network
+    driver: bridge
