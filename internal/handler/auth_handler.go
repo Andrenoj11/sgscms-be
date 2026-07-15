@@ -34,6 +34,22 @@ func NewAuthHandler(
 	}
 }
 
+// Login godoc
+//
+// @Summary Login admin
+// @Description Melakukan autentikasi admin dan membuat access token, refresh cookie, serta signing key.
+// @Tags Admin Authentication
+// @Accept json
+// @Produce json
+// @Param request body dto.LoginRequest true "Login credentials"
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.LoginResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 403 {object} dto.SwaggerErrorResponse
+// @Failure 429 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/auth/login [post]
+
 func (h *AuthHandler) Login(
 	c *gin.Context,
 ) {
@@ -103,6 +119,18 @@ func (h *AuthHandler) Login(
 		result.Response,
 	)
 }
+
+// Refresh godoc
+//
+// @Summary Refresh access token
+// @Description Membuat access token dan signing key baru menggunakan HttpOnly refresh-token cookie.
+// @Tags Admin Authentication
+// @Produce json
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.RefreshResponse}
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 403 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/auth/refresh [post]
 
 func (h *AuthHandler) Refresh(
 	c *gin.Context,
@@ -183,6 +211,16 @@ func (h *AuthHandler) Refresh(
 	)
 }
 
+// Logout godoc
+//
+// @Summary Logout admin
+// @Description Mencabut admin session dan menghapus refresh-token cookie.
+// @Tags Admin Authentication
+// @Produce json
+// @Success 200 {object} dto.SwaggerSuccessResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/auth/logout [post]
+
 func (h *AuthHandler) Logout(
 	c *gin.Context,
 ) {
@@ -212,6 +250,22 @@ func (h *AuthHandler) Logout(
 		nil,
 	)
 }
+
+// Me godoc
+//
+// @Summary Mendapatkan admin saat ini
+// @Description Mengembalikan profil admin dari access token aktif.
+// @Tags Admin Authentication
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.AdminResponse}
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 403 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/auth/me [get]
 
 func (h *AuthHandler) Me(
 	c *gin.Context,

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	_ "github.com/Andrenoj11/sgscms-be/docs"
 	"github.com/Andrenoj11/sgscms-be/internal/config"
 	"github.com/Andrenoj11/sgscms-be/internal/handler"
 	"github.com/Andrenoj11/sgscms-be/internal/middleware"
@@ -13,6 +14,8 @@ import (
 	"github.com/Andrenoj11/sgscms-be/internal/security"
 	"github.com/Andrenoj11/sgscms-be/internal/service"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func New(
@@ -24,16 +27,53 @@ func New(
 	}
 
 	router := gin.New()
-	router.HandleMethodNotAllowed = true
+router.HandleMethodNotAllowed = true
+
+if len(cfg.Server.TrustedProxies) == 0 {
+	if err := router.SetTrustedProxies(nil); err != nil {
+		panic(
+			"failed to disable trusted proxies: " +
+				err.Error(),
+		)
+	}
+} else {
+	if err := router.SetTrustedProxies(
+		cfg.Server.TrustedProxies,
+	); err != nil {
+		panic(
+			"failed to configure trusted proxies: " +
+				err.Error(),
+		)
+	}
+}
+
+router.Use(
+	middleware.RequestID(),
+)
+
+router.Use(
+	gin.Logger(),
+)
+
+router.Use(
+	gin.Recovery(),
+)
+
+router.Use(
+	middleware.SecurityHeaders(),
+)
+
+router.Use(
+	middleware.CORS(
+		cfg.Security.CORSAllowedOrigins,
+	),
+)
 
 	/*
 		|--------------------------------------------------------------------------
 		| Global Middleware
 		|--------------------------------------------------------------------------
 	*/
-
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
 
 	router.Use(
 		middleware.CORS(
@@ -216,6 +256,13 @@ func New(
 		healthHandler.Check,
 	)
 
+	router.GET(
+	"/swagger/*any",
+	ginSwagger.WrapHandler(
+		swaggerFiles.Handler,
+	),
+)
+
 	router.Static(
 		"/uploads",
 		cfg.Storage.Directory,
@@ -239,32 +286,37 @@ func New(
 	*/
 
 	publicAPI := apiV1.Group("/public")
-	{
-		publicAPI.GET(
-			"/practice-areas",
-			publicHandler.ListPracticeAreas,
-		)
 
-		publicAPI.GET(
-			"/teams",
-			publicHandler.ListTeams,
-		)
+publicAPI.Use(
+	middleware.PublicCache(60),
+)
 
-		publicAPI.GET(
-			"/teams/:slug",
-			publicHandler.GetTeamBySlug,
-		)
+{
+	publicAPI.GET(
+		"/practice-areas",
+		publicHandler.ListPracticeAreas,
+	)
 
-		publicAPI.GET(
-			"/news",
-			publicHandler.ListNews,
-		)
+	publicAPI.GET(
+		"/teams",
+		publicHandler.ListTeams,
+	)
 
-		publicAPI.GET(
-			"/news/:slug",
-			publicHandler.GetNewsBySlug,
-		)
-	}
+	publicAPI.GET(
+		"/teams/:slug",
+		publicHandler.GetTeamBySlug,
+	)
+
+	publicAPI.GET(
+		"/news",
+		publicHandler.ListNews,
+	)
+
+	publicAPI.GET(
+		"/news/:slug",
+		publicHandler.GetNewsBySlug,
+	)
+}
 
 	/*
 		|--------------------------------------------------------------------------
@@ -284,24 +336,35 @@ func New(
 		|
 	*/
 
-	authAPI := adminAPI.Group("/auth")
-	{
-		authAPI.POST(
-			"/login",
-			loginRateLimiter.LimitByIP(),
-			authHandler.Login,
-		)
+authAPI := adminAPI.Group("/auth")
 
-		authAPI.POST(
-			"/refresh",
-			authHandler.Refresh,
-		)
+authAPI.Use(
+	middleware.NoStore(),
+)
 
-		authAPI.POST(
-			"/logout",
-			authHandler.Logout,
-		)
-	}
+authAPI.Use(
+	middleware.JSONBodyLimit(
+		cfg.Server.MaxJSONBodySize,
+	),
+)
+
+{
+	authAPI.POST(
+		"/login",
+		loginRateLimiter.LimitByIP(),
+		authHandler.Login,
+	)
+
+	authAPI.POST(
+		"/refresh",
+		authHandler.Refresh,
+	)
+
+	authAPI.POST(
+		"/logout",
+		authHandler.Logout,
+	)
+}
 
 	/*
 		|--------------------------------------------------------------------------
@@ -312,12 +375,16 @@ func New(
 		|
 	*/
 
-	authenticatedAdminAPI :=
-		adminAPI.Group("")
+authenticatedAdminAPI :=
+	adminAPI.Group("")
 
-	authenticatedAdminAPI.Use(
-		authMiddleware.Authenticate(),
-	)
+authenticatedAdminAPI.Use(
+	middleware.NoStore(),
+)
+
+authenticatedAdminAPI.Use(
+	authMiddleware.Authenticate(),
+)
 
 	/*
 		|--------------------------------------------------------------------------
@@ -356,11 +423,17 @@ func New(
 	*/
 
 	signedAdminAPI :=
-		authenticatedAdminAPI.Group("")
+	authenticatedAdminAPI.Group("")
 
-	signedAdminAPI.Use(
-		signatureMiddleware.Verify(),
-	)
+signedAdminAPI.Use(
+	middleware.JSONBodyLimit(
+		cfg.Server.MaxJSONBodySize,
+	),
+)
+
+signedAdminAPI.Use(
+	signatureMiddleware.Verify(),
+)
 
 	/*
 		|--------------------------------------------------------------------------

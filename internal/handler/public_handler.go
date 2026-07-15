@@ -25,6 +25,15 @@ func NewPublicHandler(
 	}
 }
 
+// ListPracticeAreas godoc
+//
+// @Summary Daftar practice area publik
+// @Tags Public
+// @Produce json
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=[]dto.PublicPracticeAreaResponse}
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /public/practice-areas [get]
+
 func (h *PublicHandler) ListPracticeAreas(
 	c *gin.Context,
 ) {
@@ -49,6 +58,18 @@ func (h *PublicHandler) ListPracticeAreas(
 		practiceAreas,
 	)
 }
+
+// ListTeams godoc
+//
+// @Summary Daftar team publik
+// @Tags Public
+// @Produce json
+// @Param page query int false "Page" default(1)
+// @Param limit query int false "Limit" default(10) maximum(100)
+// @Param search query string false "Search"
+// @Success 200 {object} dto.SwaggerPaginatedResponse{data=[]dto.PublicTeamListResponse}
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /public/teams [get]
 
 func (h *PublicHandler) ListTeams(
 	c *gin.Context,
@@ -87,6 +108,18 @@ func (h *PublicHandler) ListTeams(
 		meta,
 	)
 }
+
+// GetTeamBySlug godoc
+//
+// @Summary Detail team publik
+// @Tags Public
+// @Produce json
+// @Param slug path string true "Team slug"
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.PublicTeamDetailResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /public/teams/{slug} [get]
 
 func (h *PublicHandler) GetTeamBySlug(
 	c *gin.Context,
@@ -140,6 +173,20 @@ func (h *PublicHandler) GetTeamBySlug(
 		team,
 	)
 }
+
+// ListNews godoc
+//
+// @Summary Daftar news publik
+// @Tags Public
+// @Produce json
+// @Param page query int false "Page" default(1)
+// @Param limit query int false "Limit" default(10) maximum(100)
+// @Param search query string false "Search"
+// @Param is_featured query bool false "Featured filter"
+// @Success 200 {object} dto.SwaggerPaginatedResponse{data=[]dto.PublicNewsListResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /public/news [get]
 
 func (h *PublicHandler) ListNews(
 	c *gin.Context,
@@ -202,6 +249,18 @@ func (h *PublicHandler) ListNews(
 		meta,
 	)
 }
+
+// GetNewsBySlug godoc
+//
+// @Summary Detail news publik
+// @Tags Public
+// @Produce json
+// @Param slug path string true "News slug"
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.PublicNewsDetailResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /public/news/{slug} [get]
 
 func (h *PublicHandler) GetNewsBySlug(
 	c *gin.Context,

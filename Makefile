@@ -35,3 +35,9 @@ migrate-down:
 
 seed:
 	go run ./cmd/seed
+
+
+.PHONY: swagger
+
+swagger:
+	swag init -g cmd/api/main.go -o docs --parseDependency --parseInternal

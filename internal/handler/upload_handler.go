@@ -25,6 +25,24 @@ func NewUploadHandler(
 	}
 }
 
+// UploadImage godoc
+//
+// @Summary Upload gambar
+// @Description Upload JPEG, PNG, atau WEBP untuk team atau news.
+// @Tags Admin Uploads
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param category formData string true "Image category" Enums(team,news)
+// @Param file formData file true "Image file"
+// @Success 201 {object} dto.SwaggerSuccessResponse{data=dto.UploadImageResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 413 {object} dto.SwaggerErrorResponse
+// @Failure 415 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/uploads/images [post]
+
 func (h *UploadHandler) UploadImage(
 	c *gin.Context,
 ) {

@@ -28,6 +28,24 @@ func NewPracticeAreaHandler(
 	}
 }
 
+// Create godoc
+//
+// @Summary Membuat practice area
+// @Tags Admin Practice Areas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param request body dto.CreatePracticeAreaRequest true "Practice-area data"
+// @Success 201 {object} dto.SwaggerSuccessResponse{data=dto.PracticeAreaResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 409 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/practice-areas [post]
+
 func (h *PracticeAreaHandler) Create(
 	c *gin.Context,
 ) {
@@ -115,6 +133,23 @@ func (h *PracticeAreaHandler) Create(
 	)
 }
 
+// GetByID godoc
+//
+// @Summary Detail practice area
+// @Tags Admin Practice Areas
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param id path string true "Practice-area UUID"
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.PracticeAreaResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/practice-areas/{id} [get]
+
 func (h *PracticeAreaHandler) GetByID(
 	c *gin.Context,
 ) {
@@ -175,6 +210,25 @@ func (h *PracticeAreaHandler) GetByID(
 		practiceArea,
 	)
 }
+
+// List godoc
+//
+// @Summary Daftar practice area admin
+// @Tags Admin Practice Areas
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param page query int false "Page" default(1)
+// @Param limit query int false "Limit" default(10) maximum(100)
+// @Param search query string false "Search by name"
+// @Param active query bool false "Filter active status"
+// @Success 200 {object} dto.SwaggerPaginatedResponse{data=[]dto.PracticeAreaResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/practice-areas [get]
 
 func (h *PracticeAreaHandler) List(
 	c *gin.Context,
@@ -253,6 +307,26 @@ func parsePositiveInt(
 
 	return parsed
 }
+
+// Update godoc
+//
+// @Summary Memperbarui practice area
+// @Tags Admin Practice Areas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param id path string true "Practice-area UUID"
+// @Param request body dto.UpdatePracticeAreaRequest true "Practice-area data"
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.PracticeAreaResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 409 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/practice-areas/{id} [put]
 
 func (h *PracticeAreaHandler) Update(
 	c *gin.Context,
@@ -375,6 +449,24 @@ func (h *PracticeAreaHandler) Update(
 		practiceArea,
 	)
 }
+
+// Delete godoc
+//
+// @Summary Menghapus practice area
+// @Description Melakukan soft delete.
+// @Tags Admin Practice Areas
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param id path string true "Practice-area UUID"
+// @Success 200 {object} dto.SwaggerSuccessResponse
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/practice-areas/{id} [delete]
 
 func (h *PracticeAreaHandler) Delete(
 	c *gin.Context,

@@ -27,6 +27,24 @@ func NewNewsHandler(
 	}
 }
 
+// Create godoc
+//
+// @Summary Membuat news
+// @Tags Admin News
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param request body dto.CreateNewsRequest true "News data"
+// @Success 201 {object} dto.SwaggerSuccessResponse{data=dto.NewsResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 409 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/news [post]
+
 func (h *NewsHandler) Create(
 	c *gin.Context,
 ) {
@@ -70,6 +88,26 @@ func (h *NewsHandler) Create(
 		news,
 	)
 }
+
+// List godoc
+//
+// @Summary Daftar news admin
+// @Tags Admin News
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param page query int false "Page" default(1)
+// @Param limit query int false "Limit" default(10) maximum(100)
+// @Param search query string false "Search"
+// @Param status query string false "Status" Enums(draft,published,archived)
+// @Param is_featured query bool false "Featured filter"
+// @Success 200 {object} dto.SwaggerPaginatedResponse{data=[]dto.NewsResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/news [get]
 
 func (h *NewsHandler) List(
 	c *gin.Context,
@@ -133,6 +171,24 @@ func (h *NewsHandler) List(
 	)
 }
 
+
+// GetByID godoc
+//
+// @Summary Detail news admin
+// @Tags Admin News
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param id path string true "News UUID"
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.NewsResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/news/{id} [get]
+
 func (h *NewsHandler) GetByID(
 	c *gin.Context,
 ) {
@@ -164,6 +220,26 @@ func (h *NewsHandler) GetByID(
 		news,
 	)
 }
+
+// Update godoc
+//
+// @Summary Memperbarui news
+// @Tags Admin News
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param id path string true "News UUID"
+// @Param request body dto.UpdateNewsRequest true "News data"
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.NewsResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 409 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/news/{id} [put]
 
 func (h *NewsHandler) Update(
 	c *gin.Context,
@@ -221,6 +297,24 @@ func (h *NewsHandler) Update(
 		news,
 	)
 }
+
+// Delete godoc
+//
+// @Summary Menghapus news
+// @Description Melakukan soft delete.
+// @Tags Admin News
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param id path string true "News UUID"
+// @Success 200 {object} dto.SwaggerSuccessResponse
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/news/{id} [delete]
 
 func (h *NewsHandler) Delete(
 	c *gin.Context,

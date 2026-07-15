@@ -27,6 +27,24 @@ func NewTeamHandler(
 	}
 }
 
+// Create godoc
+//
+// @Summary Membuat anggota team
+// @Tags Admin Teams
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param request body dto.CreateTeamRequest true "Team data"
+// @Success 201 {object} dto.SwaggerSuccessResponse{data=dto.TeamResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 409 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/teams [post]
+
 func (h *TeamHandler) Create(
 	c *gin.Context,
 ) {
@@ -70,6 +88,25 @@ func (h *TeamHandler) Create(
 		team,
 	)
 }
+
+// List godoc
+//
+// @Summary Daftar team admin
+// @Tags Admin Teams
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param page query int false "Page" default(1)
+// @Param limit query int false "Limit" default(10) maximum(100)
+// @Param search query string false "Search"
+// @Param published query bool false "Filter published status"
+// @Success 200 {object} dto.SwaggerPaginatedResponse{data=[]dto.TeamResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/teams [get]
 
 func (h *TeamHandler) List(
 	c *gin.Context,
@@ -137,6 +174,23 @@ func (h *TeamHandler) List(
 	)
 }
 
+// GetByID godoc
+//
+// @Summary Detail team admin
+// @Tags Admin Teams
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param id path string true "Team UUID"
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.TeamResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/teams/{id} [get]
+
 func (h *TeamHandler) GetByID(
 	c *gin.Context,
 ) {
@@ -168,6 +222,26 @@ func (h *TeamHandler) GetByID(
 		team,
 	)
 }
+
+// Update godoc
+//
+// @Summary Memperbarui team
+// @Tags Admin Teams
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param id path string true "Team UUID"
+// @Param request body dto.UpdateTeamRequest true "Team data"
+// @Success 200 {object} dto.SwaggerSuccessResponse{data=dto.TeamResponse}
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 409 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/teams/{id} [put]
 
 func (h *TeamHandler) Update(
 	c *gin.Context,
@@ -225,6 +299,24 @@ func (h *TeamHandler) Update(
 		team,
 	)
 }
+
+// Delete godoc
+//
+// @Summary Menghapus team
+// @Description Melakukan soft delete.
+// @Tags Admin Teams
+// @Produce json
+// @Security BearerAuth
+// @Security XSignature
+// @Security XTimestamp
+// @Security XNonce
+// @Param id path string true "Team UUID"
+// @Success 200 {object} dto.SwaggerSuccessResponse
+// @Failure 400 {object} dto.SwaggerErrorResponse
+// @Failure 401 {object} dto.SwaggerErrorResponse
+// @Failure 404 {object} dto.SwaggerErrorResponse
+// @Failure 500 {object} dto.SwaggerErrorResponse
+// @Router /admin/teams/{id} [delete]
 
 func (h *TeamHandler) Delete(
 	c *gin.Context,

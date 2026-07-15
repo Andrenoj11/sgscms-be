@@ -1,0 +1,47 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Backend CMS API untuk SGS Law Firm.\n\nAdmin API menggunakan JWT Bearer Token.\nSebagian besar admin endpoint juga membutuhkan X-Timestamp, X-Nonce, dan X-Signature.\nUpload gambar hanya membutuhkan JWT karena menggunakan multipart/form-data.\n\nFormat canonical X-Signature:\nMETHOD + newline + REQUEST_URI + newline + TIMESTAMP + newline + NONCE + newline + SHA256_BODY",
+        "title": "SGS CMS API",
+        "contact": {
+            "name": "SGS CMS Development Team"
+        },
+        "license": {
+            "name": "Private"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {},
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Masukkan token dengan format: Bearer {access_token}",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        },
+        "XNonce": {
+            "description": "Nilai unik untuk mencegah replay attack.",
+            "type": "apiKey",
+            "name": "X-Nonce",
+            "in": "header"
+        },
+        "XSignature": {
+            "description": "HMAC-SHA256 signature dari canonical request.",
+            "type": "apiKey",
+            "name": "X-Signature",
+            "in": "header"
+        },
+        "XTimestamp": {
+            "description": "Unix timestamp dalam detik.",
+            "type": "apiKey",
+            "name": "X-Timestamp",
+            "in": "header"
+        }
+    }
+}

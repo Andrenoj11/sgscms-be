@@ -2,86 +2,160 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/Andrenoj11/sgscms-be/internal/config"
 	"github.com/Andrenoj11/sgscms-be/internal/database"
 	"github.com/Andrenoj11/sgscms-be/internal/router"
+	"github.com/Andrenoj11/sgscms-be/internal/server"
 )
 
+// @title SGS CMS API
+// @version 1.0
+// @description Backend CMS API untuk SGS Law Firm.
+// @description
+// @description Admin API menggunakan JWT Bearer Token.
+// @description Sebagian besar admin endpoint juga membutuhkan X-Timestamp, X-Nonce, dan X-Signature.
+// @description Upload gambar hanya membutuhkan JWT karena menggunakan multipart/form-data.
+// @description
+// @description Format canonical X-Signature:
+// @description METHOD + newline + REQUEST_URI + newline + TIMESTAMP + newline + NONCE + newline + SHA256_BODY
+//
+// @contact.name SGS CMS Development Team
+//
+// @license.name Private
+//
+// @host localhost:8080
+// @BasePath /api/v1
+//
+// @schemes http https
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Masukkan token dengan format: Bearer {access_token}
+//
+// @securityDefinitions.apikey XSignature
+// @in header
+// @name X-Signature
+// @description HMAC-SHA256 signature dari canonical request.
+//
+// @securityDefinitions.apikey XTimestamp
+// @in header
+// @name X-Timestamp
+// @description Unix timestamp dalam detik.
+//
+// @securityDefinitions.apikey XNonce
+// @in header
+// @name X-Nonce
+// @description Nilai unik untuk mencegah replay attack.
+
 func main() {
+	/*
+		|--------------------------------------------------------------------------
+		| Load Configuration
+		|--------------------------------------------------------------------------
+	*/
+
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("failed to load configuration: %v", err)
+		log.Fatalf(
+			"failed to load configuration: %v",
+			err,
+		)
 	}
 
-	db, err := database.NewPostgresConnection(cfg.Database)
+	/*
+		|--------------------------------------------------------------------------
+		| Database Connection
+		|--------------------------------------------------------------------------
+	*/
+
+	db, err := database.NewPostgresConnection(
+		cfg.Database,
+	)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatalf(
+			"failed to connect to database: %v",
+			err,
+		)
 	}
 
 	defer func() {
 		if err := db.Close(); err != nil {
-			log.Printf("failed to close database connection: %v", err)
+			log.Printf(
+				"failed to close database connection: %v",
+				err,
+			)
 		}
 	}()
 
-	log.Println("database connection established")
+	log.Println(
+		"database connection established",
+	)
 
-	appRouter := router.New(cfg, db)
+	/*
+		|--------------------------------------------------------------------------
+		| Application Router
+		|--------------------------------------------------------------------------
+	*/
 
-	server := &http.Server{
-		Addr:              fmt.Sprintf(":%s", cfg.App.Port),
-		Handler:           appRouter,
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       60 * time.Second,
-	}
+	appRouter := router.New(
+		cfg,
+		db,
+	)
 
-	go func() {
-		log.Printf(
-			"%s running on http://localhost:%s in %s mode",
-			cfg.App.Name,
-			cfg.App.Port,
-			cfg.App.Env,
+	/*
+		|--------------------------------------------------------------------------
+		| Application Context
+		|--------------------------------------------------------------------------
+		|
+		| Context akan dibatalkan ketika aplikasi menerima:
+		|
+		| SIGINT  → Ctrl + C
+		| SIGTERM → sinyal penghentian dari Docker, Kubernetes, atau server
+		|
+	*/
+
+	applicationContext, stop :=
+		signal.NotifyContext(
+			context.Background(),
+			os.Interrupt,
+			syscall.SIGTERM,
 		)
 
-		if err := server.ListenAndServe(); err != nil &&
-			!errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("failed to start HTTP server: %v", err)
-		}
-	}()
+	defer stop()
 
-	shutdownSignal := make(chan os.Signal, 1)
+	/*
+		|--------------------------------------------------------------------------
+		| HTTP Server
+		|--------------------------------------------------------------------------
+	*/
 
-	signal.Notify(
-		shutdownSignal,
-		syscall.SIGINT,
-		syscall.SIGTERM,
+	httpServer := server.NewHTTPServer(
+		cfg,
+		appRouter,
 	)
 
-	<-shutdownSignal
-
-	log.Println("shutting down server...")
-
-	shutdownContext, cancel := context.WithTimeout(
-		context.Background(),
-		10*time.Second,
+	log.Printf(
+		"%s starting in %s mode",
+		cfg.App.Name,
+		cfg.App.Env,
 	)
-	defer cancel()
 
-	if err := server.Shutdown(shutdownContext); err != nil {
-		log.Printf("server shutdown failed: %v", err)
-		return
+	if err := httpServer.Run(
+		applicationContext,
+	); err != nil {
+		log.Fatalf(
+			"HTTP server stopped with error: %v",
+			err,
+		)
 	}
 
-	log.Println("server stopped gracefully")
+	log.Println(
+		"application stopped successfully",
+	)
 }
