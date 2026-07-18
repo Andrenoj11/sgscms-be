@@ -96,7 +96,8 @@ check: fmt tidy vet test build
 .PHONY: swagger
 swagger:
 	go run github.com/swaggo/swag/cmd/swag@v1.8.12 init \
-		-g cmd/api/main.go \
+		-g main.go \
+		-d cmd/api,internal/handler \
 		-o docs \
 		--parseDependency \
 		--parseInternal

@@ -45,7 +45,6 @@ func NewPracticeAreaHandler(
 // @Failure 409 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/practice-areas [post]
-
 func (h *PracticeAreaHandler) Create(
 	c *gin.Context,
 ) {
@@ -149,7 +148,6 @@ func (h *PracticeAreaHandler) Create(
 // @Failure 404 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/practice-areas/{id} [get]
-
 func (h *PracticeAreaHandler) GetByID(
 	c *gin.Context,
 ) {
@@ -229,7 +227,6 @@ func (h *PracticeAreaHandler) GetByID(
 // @Failure 401 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/practice-areas [get]
-
 func (h *PracticeAreaHandler) List(
 	c *gin.Context,
 ) {
@@ -327,7 +324,6 @@ func parsePositiveInt(
 // @Failure 409 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/practice-areas/{id} [put]
-
 func (h *PracticeAreaHandler) Update(
 	c *gin.Context,
 ) {
@@ -467,7 +463,6 @@ func (h *PracticeAreaHandler) Update(
 // @Failure 404 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/practice-areas/{id} [delete]
-
 func (h *PracticeAreaHandler) Delete(
 	c *gin.Context,
 ) {

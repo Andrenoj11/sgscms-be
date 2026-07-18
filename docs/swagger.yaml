@@ -1,4 +1,479 @@
 basePath: /api/v1
+definitions:
+  dto.AdminResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+  dto.CreateNewsRequest:
+    properties:
+      content:
+        maxLength: 100000
+        minLength: 10
+        type: string
+      excerpt:
+        maxLength: 1000
+        type: string
+      featured_image_url:
+        maxLength: 2000
+        type: string
+      is_featured:
+        type: boolean
+      status:
+        enum:
+        - draft
+        - published
+        - archived
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+    required:
+    - content
+    - status
+    - title
+    type: object
+  dto.CreatePracticeAreaRequest:
+    properties:
+      description:
+        maxLength: 2000
+        type: string
+      display_order:
+        minimum: 0
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        maxLength: 150
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  dto.CreateTeamRequest:
+    properties:
+      biography:
+        maxLength: 20000
+        type: string
+      degree:
+        maxLength: 100
+        type: string
+      display_order:
+        minimum: 0
+        type: integer
+      email:
+        maxLength: 150
+        type: string
+      is_published:
+        type: boolean
+      linkedin_url:
+        maxLength: 2000
+        type: string
+      name:
+        maxLength: 150
+        minLength: 2
+        type: string
+      photo_url:
+        maxLength: 2000
+        type: string
+      position:
+        maxLength: 150
+        minLength: 2
+        type: string
+      practice_area_ids:
+        items:
+          type: string
+        type: array
+      short_description:
+        maxLength: 1000
+        type: string
+    required:
+    - name
+    - position
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        maxLength: 150
+        type: string
+      password:
+        maxLength: 128
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      admin:
+        $ref: '#/definitions/dto.AdminResponse'
+      expires_in:
+        type: integer
+      signing_key:
+        type: string
+      token_type:
+        type: string
+    type: object
+  dto.NewsResponse:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      excerpt:
+        type: string
+      featured_image_url:
+        type: string
+      id:
+        type: string
+      is_featured:
+        type: boolean
+      published_at:
+        type: string
+      slug:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.PracticeAreaResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      display_order:
+        type: integer
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      slug:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.PublicNewsDetailResponse:
+    properties:
+      content:
+        type: string
+      excerpt:
+        type: string
+      featured_image_url:
+        type: string
+      id:
+        type: string
+      is_featured:
+        type: boolean
+      published_at:
+        type: string
+      slug:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.PublicNewsListResponse:
+    properties:
+      excerpt:
+        type: string
+      featured_image_url:
+        type: string
+      id:
+        type: string
+      is_featured:
+        type: boolean
+      published_at:
+        type: string
+      slug:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.PublicPracticeAreaResponse:
+    properties:
+      description:
+        type: string
+      display_order:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  dto.PublicTeamDetailResponse:
+    properties:
+      biography:
+        type: string
+      degree:
+        type: string
+      display_order:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      linkedin_url:
+        type: string
+      name:
+        type: string
+      photo_url:
+        type: string
+      position:
+        type: string
+      practice_areas:
+        items:
+          $ref: '#/definitions/dto.PublicPracticeAreaResponse'
+        type: array
+      published_at:
+        type: string
+      short_description:
+        type: string
+      slug:
+        type: string
+    type: object
+  dto.PublicTeamListResponse:
+    properties:
+      degree:
+        type: string
+      display_order:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      photo_url:
+        type: string
+      position:
+        type: string
+      practice_areas:
+        items:
+          $ref: '#/definitions/dto.PublicPracticeAreaResponse'
+        type: array
+      short_description:
+        type: string
+      slug:
+        type: string
+    type: object
+  dto.RefreshResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      signing_key:
+        type: string
+      token_type:
+        type: string
+    type: object
+  dto.SwaggerErrorResponse:
+    properties:
+      errors: {}
+      message:
+        example: Invalid request
+        type: string
+      success:
+        example: false
+        type: boolean
+    type: object
+  dto.SwaggerPaginatedResponse:
+    properties:
+      data: {}
+      message:
+        example: Data retrieved successfully
+        type: string
+      meta:
+        $ref: '#/definitions/dto.SwaggerPaginationMeta'
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.SwaggerPaginationMeta:
+    properties:
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 25
+        type: integer
+      total_pages:
+        example: 3
+        type: integer
+    type: object
+  dto.SwaggerSuccessResponse:
+    properties:
+      data: {}
+      message:
+        example: Request successful
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.TeamResponse:
+    properties:
+      biography:
+        type: string
+      created_at:
+        type: string
+      degree:
+        type: string
+      display_order:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      is_published:
+        type: boolean
+      linkedin_url:
+        type: string
+      name:
+        type: string
+      photo_url:
+        type: string
+      position:
+        type: string
+      practice_areas:
+        items:
+          $ref: '#/definitions/dto.PracticeAreaResponse'
+        type: array
+      published_at:
+        type: string
+      short_description:
+        type: string
+      slug:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.UpdateNewsRequest:
+    properties:
+      content:
+        maxLength: 100000
+        minLength: 10
+        type: string
+      excerpt:
+        maxLength: 1000
+        type: string
+      featured_image_url:
+        maxLength: 2000
+        type: string
+      is_featured:
+        type: boolean
+      status:
+        enum:
+        - draft
+        - published
+        - archived
+        type: string
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+    required:
+    - content
+    - status
+    - title
+    type: object
+  dto.UpdatePracticeAreaRequest:
+    properties:
+      description:
+        maxLength: 2000
+        type: string
+      display_order:
+        minimum: 0
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        maxLength: 150
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  dto.UpdateTeamRequest:
+    properties:
+      biography:
+        maxLength: 20000
+        type: string
+      degree:
+        maxLength: 100
+        type: string
+      display_order:
+        minimum: 0
+        type: integer
+      email:
+        maxLength: 150
+        type: string
+      is_published:
+        type: boolean
+      linkedin_url:
+        maxLength: 2000
+        type: string
+      name:
+        maxLength: 150
+        minLength: 2
+        type: string
+      photo_url:
+        maxLength: 2000
+        type: string
+      position:
+        maxLength: 150
+        minLength: 2
+        type: string
+      practice_area_ids:
+        items:
+          type: string
+        type: array
+      short_description:
+        maxLength: 1000
+        type: string
+    required:
+    - name
+    - position
+    type: object
+  dto.UploadImageResponse:
+    properties:
+      category:
+        type: string
+      content_type:
+        type: string
+      filename:
+        type: string
+      height:
+        type: integer
+      original_name:
+        type: string
+      path:
+        type: string
+      size:
+        type: integer
+      url:
+        type: string
+      width:
+        type: integer
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -16,7 +491,1101 @@ info:
     name: Private
   title: SGS CMS API
   version: "1.0"
-paths: {}
+paths:
+  /admin/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Melakukan autentikasi admin dan membuat access token, refresh cookie,
+        serta signing key.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.LoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      summary: Login admin
+      tags:
+      - Admin Authentication
+  /admin/auth/logout:
+    post:
+      description: Mencabut admin session dan menghapus refresh-token cookie.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SwaggerSuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      summary: Logout admin
+      tags:
+      - Admin Authentication
+  /admin/auth/me:
+    get:
+      description: Mengembalikan profil admin dari access token aktif.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AdminResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Mendapatkan admin saat ini
+      tags:
+      - Admin Authentication
+  /admin/auth/refresh:
+    post:
+      description: Membuat access token dan signing key baru menggunakan HttpOnly
+        refresh-token cookie.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.RefreshResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Admin Authentication
+  /admin/news:
+    get:
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Limit
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Search
+        in: query
+        name: search
+        type: string
+      - description: Status
+        enum:
+        - draft
+        - published
+        - archived
+        in: query
+        name: status
+        type: string
+      - description: Featured filter
+        in: query
+        name: is_featured
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerPaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.NewsResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Daftar news admin
+      tags:
+      - Admin News
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: News data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateNewsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.NewsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Membuat news
+      tags:
+      - Admin News
+  /admin/news/{id}:
+    delete:
+      description: Melakukan soft delete.
+      parameters:
+      - description: News UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SwaggerSuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Menghapus news
+      tags:
+      - Admin News
+    get:
+      parameters:
+      - description: News UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.NewsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Detail news admin
+      tags:
+      - Admin News
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: News UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: News data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateNewsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.NewsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Memperbarui news
+      tags:
+      - Admin News
+  /admin/practice-areas:
+    get:
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Limit
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      - description: Filter active status
+        in: query
+        name: active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerPaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PracticeAreaResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Daftar practice area admin
+      tags:
+      - Admin Practice Areas
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Practice-area data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePracticeAreaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PracticeAreaResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Membuat practice area
+      tags:
+      - Admin Practice Areas
+  /admin/practice-areas/{id}:
+    delete:
+      description: Melakukan soft delete.
+      parameters:
+      - description: Practice-area UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SwaggerSuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Menghapus practice area
+      tags:
+      - Admin Practice Areas
+    get:
+      parameters:
+      - description: Practice-area UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PracticeAreaResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Detail practice area
+      tags:
+      - Admin Practice Areas
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Practice-area UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Practice-area data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePracticeAreaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PracticeAreaResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Memperbarui practice area
+      tags:
+      - Admin Practice Areas
+  /admin/teams:
+    get:
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Limit
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Search
+        in: query
+        name: search
+        type: string
+      - description: Filter published status
+        in: query
+        name: published
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerPaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.TeamResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Daftar team admin
+      tags:
+      - Admin Teams
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Team data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTeamRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.TeamResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Membuat anggota team
+      tags:
+      - Admin Teams
+  /admin/teams/{id}:
+    delete:
+      description: Melakukan soft delete.
+      parameters:
+      - description: Team UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SwaggerSuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Menghapus team
+      tags:
+      - Admin Teams
+    get:
+      parameters:
+      - description: Team UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.TeamResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Detail team admin
+      tags:
+      - Admin Teams
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Team UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Team data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTeamRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.TeamResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      - XSignature: []
+      - XTimestamp: []
+      - XNonce: []
+      summary: Memperbarui team
+      tags:
+      - Admin Teams
+  /admin/uploads/images:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload JPEG, PNG, atau WEBP untuk team atau news.
+      parameters:
+      - description: Image category
+        enum:
+        - team
+        - news
+        in: formData
+        name: category
+        required: true
+        type: string
+      - description: Image file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UploadImageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "415":
+          description: Unsupported Media Type
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload gambar
+      tags:
+      - Admin Uploads
+  /public/news:
+    get:
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Limit
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Search
+        in: query
+        name: search
+        type: string
+      - description: Featured filter
+        in: query
+        name: is_featured
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerPaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicNewsListResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      summary: Daftar news publik
+      tags:
+      - Public
+  /public/news/{slug}:
+    get:
+      parameters:
+      - description: News slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PublicNewsDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      summary: Detail news publik
+      tags:
+      - Public
+  /public/practice-areas:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicPracticeAreaResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      summary: Daftar practice area publik
+      tags:
+      - Public
+  /public/teams:
+    get:
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Limit
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Search
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerPaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicTeamListResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      summary: Daftar team publik
+      tags:
+      - Public
+  /public/teams/{slug}:
+    get:
+      parameters:
+      - description: Team slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.SwaggerSuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PublicTeamDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.SwaggerErrorResponse'
+      summary: Detail team publik
+      tags:
+      - Public
 schemes:
 - http
 - https

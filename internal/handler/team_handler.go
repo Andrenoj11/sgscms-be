@@ -44,7 +44,6 @@ func NewTeamHandler(
 // @Failure 409 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/teams [post]
-
 func (h *TeamHandler) Create(
 	c *gin.Context,
 ) {
@@ -107,7 +106,6 @@ func (h *TeamHandler) Create(
 // @Failure 401 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/teams [get]
-
 func (h *TeamHandler) List(
 	c *gin.Context,
 ) {
@@ -190,7 +188,6 @@ func (h *TeamHandler) List(
 // @Failure 404 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/teams/{id} [get]
-
 func (h *TeamHandler) GetByID(
 	c *gin.Context,
 ) {
@@ -242,7 +239,6 @@ func (h *TeamHandler) GetByID(
 // @Failure 409 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/teams/{id} [put]
-
 func (h *TeamHandler) Update(
 	c *gin.Context,
 ) {
@@ -317,7 +313,6 @@ func (h *TeamHandler) Update(
 // @Failure 404 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/teams/{id} [delete]
-
 func (h *TeamHandler) Delete(
 	c *gin.Context,
 ) {

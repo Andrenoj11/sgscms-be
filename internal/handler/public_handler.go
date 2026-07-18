@@ -33,7 +33,6 @@ func NewPublicHandler(
 // @Success 200 {object} dto.SwaggerSuccessResponse{data=[]dto.PublicPracticeAreaResponse}
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /public/practice-areas [get]
-
 func (h *PublicHandler) ListPracticeAreas(
 	c *gin.Context,
 ) {
@@ -70,7 +69,6 @@ func (h *PublicHandler) ListPracticeAreas(
 // @Success 200 {object} dto.SwaggerPaginatedResponse{data=[]dto.PublicTeamListResponse}
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /public/teams [get]
-
 func (h *PublicHandler) ListTeams(
 	c *gin.Context,
 ) {
@@ -120,7 +118,6 @@ func (h *PublicHandler) ListTeams(
 // @Failure 404 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /public/teams/{slug} [get]
-
 func (h *PublicHandler) GetTeamBySlug(
 	c *gin.Context,
 ) {
@@ -187,7 +184,6 @@ func (h *PublicHandler) GetTeamBySlug(
 // @Failure 400 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /public/news [get]
-
 func (h *PublicHandler) ListNews(
 	c *gin.Context,
 ) {
@@ -261,7 +257,6 @@ func (h *PublicHandler) ListNews(
 // @Failure 404 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /public/news/{slug} [get]
-
 func (h *PublicHandler) GetNewsBySlug(
 	c *gin.Context,
 ) {

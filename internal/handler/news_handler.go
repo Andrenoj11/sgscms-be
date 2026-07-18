@@ -44,7 +44,6 @@ func NewNewsHandler(
 // @Failure 409 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/news [post]
-
 func (h *NewsHandler) Create(
 	c *gin.Context,
 ) {
@@ -108,7 +107,6 @@ func (h *NewsHandler) Create(
 // @Failure 401 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/news [get]
-
 func (h *NewsHandler) List(
 	c *gin.Context,
 ) {
@@ -188,7 +186,6 @@ func (h *NewsHandler) List(
 // @Failure 404 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/news/{id} [get]
-
 func (h *NewsHandler) GetByID(
 	c *gin.Context,
 ) {
@@ -240,7 +237,6 @@ func (h *NewsHandler) GetByID(
 // @Failure 409 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/news/{id} [put]
-
 func (h *NewsHandler) Update(
 	c *gin.Context,
 ) {
@@ -315,7 +311,6 @@ func (h *NewsHandler) Update(
 // @Failure 404 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/news/{id} [delete]
-
 func (h *NewsHandler) Delete(
 	c *gin.Context,
 ) {

@@ -42,7 +42,6 @@ func NewUploadHandler(
 // @Failure 415 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/uploads/images [post]
-
 func (h *UploadHandler) UploadImage(
 	c *gin.Context,
 ) {

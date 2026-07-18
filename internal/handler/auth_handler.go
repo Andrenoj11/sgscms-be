@@ -49,7 +49,6 @@ func NewAuthHandler(
 // @Failure 429 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/auth/login [post]
-
 func (h *AuthHandler) Login(
 	c *gin.Context,
 ) {
@@ -131,7 +130,6 @@ func (h *AuthHandler) Login(
 // @Failure 403 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/auth/refresh [post]
-
 func (h *AuthHandler) Refresh(
 	c *gin.Context,
 ) {
@@ -220,7 +218,6 @@ func (h *AuthHandler) Refresh(
 // @Success 200 {object} dto.SwaggerSuccessResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/auth/logout [post]
-
 func (h *AuthHandler) Logout(
 	c *gin.Context,
 ) {
@@ -266,7 +263,6 @@ func (h *AuthHandler) Logout(
 // @Failure 403 {object} dto.SwaggerErrorResponse
 // @Failure 500 {object} dto.SwaggerErrorResponse
 // @Router /admin/auth/me [get]
-
 func (h *AuthHandler) Me(
 	c *gin.Context,
 ) {
