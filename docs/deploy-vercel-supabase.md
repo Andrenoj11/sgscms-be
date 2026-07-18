@@ -78,6 +78,8 @@ SUPABASE_SERVICE_ROLE_KEY=SERVICE_ROLE_KEY
 SUPABASE_STORAGE_BUCKET=cms-images
 ```
 
+Jangan menambahkan `PORT` secara manual di Vercel. Vercel memberikan port dinamis ketika Function dijalankan dan aplikasi otomatis memprioritaskan nilai tersebut di atas `APP_PORT`.
+
 Buat secret yang kuat, misalnya:
 
 ```bash

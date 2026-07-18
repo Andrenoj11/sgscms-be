@@ -236,8 +236,11 @@ func Load() (*Config, error) {
 				"development",
 			),
 			Port: getEnv(
-				"APP_PORT",
-				"8080",
+				"PORT",
+				getEnv(
+					"APP_PORT",
+					"8080",
+				),
 			),
 			Debug: debug,
 		},
