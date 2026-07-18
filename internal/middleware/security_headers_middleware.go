@@ -1,6 +1,15 @@
 package middleware
 
-import "github.com/gin-gonic/gin"
+import (
+	"strings"
+
+	"github.com/gin-gonic/gin"
+)
+
+const (
+	apiContentSecurityPolicy     = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+	swaggerContentSecurityPolicy = "default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+)
 
 func SecurityHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -39,10 +48,13 @@ func SecurityHeaders() gin.HandlerFunc {
 			"none",
 		)
 
-		c.Header(
-			"Content-Security-Policy",
-			"default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
-		)
+		contentSecurityPolicy := apiContentSecurityPolicy
+		if c.Request.URL.Path == "/swagger" ||
+			strings.HasPrefix(c.Request.URL.Path, "/swagger/") {
+			contentSecurityPolicy = swaggerContentSecurityPolicy
+		}
+
+		c.Header("Content-Security-Policy", contentSecurityPolicy)
 
 		c.Next()
 	}
