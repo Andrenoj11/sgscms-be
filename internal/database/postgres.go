@@ -14,7 +14,7 @@ func NewPostgresConnection(
 	cfg config.DatabaseConfig,
 ) (*sql.DB, error) {
 	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=%s default_query_exec_mode=%s",
 		cfg.Host,
 		cfg.Port,
 		cfg.User,
@@ -22,6 +22,7 @@ func NewPostgresConnection(
 		cfg.Name,
 		cfg.SSLMode,
 		cfg.Timezone,
+		cfg.QueryExecMode,
 	)
 
 	db, err := sql.Open("pgx", dsn)
@@ -29,8 +30,8 @@ func NewPostgresConnection(
 		return nil, fmt.Errorf("open PostgreSQL connection: %w", err)
 	}
 
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(cfg.MaxOpenConns)
+	db.SetMaxIdleConns(cfg.MaxIdleConns)
 	db.SetConnMaxLifetime(30 * time.Minute)
 	db.SetConnMaxIdleTime(5 * time.Minute)
 

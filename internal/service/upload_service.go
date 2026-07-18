@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"image"
@@ -9,9 +10,11 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Andrenoj11/sgscms-be/internal/config"
 	"github.com/Andrenoj11/sgscms-be/internal/domain"
@@ -43,15 +46,21 @@ var (
 )
 
 type UploadService struct {
+	driver       string
 	directory    string
 	baseURL      string
 	maxImageSize int64
+	supabaseURL  string
+	supabaseKey  string
+	bucket       string
+	httpClient   *http.Client
 }
 
 func NewUploadService(
 	cfg config.StorageConfig,
 ) *UploadService {
 	return &UploadService{
+		driver: strings.TrimSpace(cfg.Driver),
 		directory: strings.TrimSpace(
 			cfg.Directory,
 		),
@@ -60,7 +69,17 @@ func NewUploadService(
 			"/",
 		),
 		maxImageSize: cfg.MaxImageSize,
+		supabaseURL:  strings.TrimRight(cfg.SupabaseURL, "/"),
+		supabaseKey:  cfg.SupabaseKey,
+		bucket:       strings.Trim(cfg.Bucket, "/"),
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
 	}
+}
+
+func (s *UploadService) IsLocal() bool {
+	return s.driver == "local"
 }
 
 func (s *UploadService) MaxImageSize() int64 {
@@ -133,92 +152,31 @@ func (s *UploadService) UploadImage(
 		string(category),
 	)
 
-	absoluteDirectory := filepath.Join(
-		s.directory,
-		relativeDirectory,
-	)
-
-	if err := os.MkdirAll(
-		absoluteDirectory,
-		0o755,
-	); err != nil {
-		return nil, fmt.Errorf(
-			"create upload directory: %w",
-			err,
-		)
-	}
-
 	relativePath := filepath.Join(
 		relativeDirectory,
 		filename,
 	)
 
-	absolutePath := filepath.Join(
-		s.directory,
-		relativePath,
-	)
-
-	destination, err := os.OpenFile(
-		absolutePath,
-		os.O_WRONLY|
-			os.O_CREATE|
-			os.O_EXCL,
-		0o644,
-	)
+	content, err := io.ReadAll(io.LimitReader(file, s.maxImageSize+1))
 	if err != nil {
 		return nil, fmt.Errorf(
-			"create uploaded image file: %w",
+			"read uploaded image: %w",
 			err,
 		)
 	}
 
-	saveSucceeded := false
-
-	defer func() {
-		_ = destination.Close()
-
-		if !saveSucceeded {
-			_ = os.Remove(absolutePath)
-		}
-	}()
-
-	written, err := io.Copy(
-		destination,
-		io.LimitReader(
-			file,
-			s.maxImageSize+1,
-		),
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"save uploaded image: %w",
-			err,
-		)
-	}
-
+	written := int64(len(content))
 	if written > s.maxImageSize {
 		return nil, ErrUploadFileTooLarge
 	}
 
-	if err := destination.Sync(); err != nil {
-		return nil, fmt.Errorf(
-			"sync uploaded image: %w",
-			err,
-		)
-	}
-
-	if err := destination.Close(); err != nil {
-		return nil, fmt.Errorf(
-			"close uploaded image: %w",
-			err,
-		)
-	}
-
-	saveSucceeded = true
-
 	publicPath := filepath.ToSlash(
 		relativePath,
 	)
+
+	if err := s.save(content, contentType, publicPath); err != nil {
+		return nil, err
+	}
 
 	fileURL := s.baseURL + "/" + publicPath
 
@@ -235,6 +193,56 @@ func (s *UploadService) UploadImage(
 	}
 
 	return response, nil
+}
+
+func (s *UploadService) save(content []byte, contentType, publicPath string) error {
+	if s.IsLocal() {
+		absolutePath := filepath.Join(s.directory, filepath.FromSlash(publicPath))
+		if err := os.MkdirAll(filepath.Dir(absolutePath), 0o755); err != nil {
+			return fmt.Errorf("create upload directory: %w", err)
+		}
+
+		if err := os.WriteFile(absolutePath, content, 0o644); err != nil {
+			return fmt.Errorf("save uploaded image: %w", err)
+		}
+
+		return nil
+	}
+
+	objectURL := fmt.Sprintf(
+		"%s/storage/v1/object/%s/%s",
+		s.supabaseURL,
+		url.PathEscape(s.bucket),
+		strings.Join(escapePathSegments(publicPath), "/"),
+	)
+	req, err := http.NewRequest(http.MethodPost, objectURL, bytes.NewReader(content))
+	if err != nil {
+		return fmt.Errorf("create Supabase Storage request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+s.supabaseKey)
+	req.Header.Set("apikey", s.supabaseKey)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("x-upsert", "false")
+
+	res, err := s.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("upload image to Supabase Storage: %w", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusMultipleChoices {
+		body, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
+		return fmt.Errorf("Supabase Storage returned %s: %s", res.Status, strings.TrimSpace(string(body)))
+	}
+
+	return nil
+}
+
+func escapePathSegments(path string) []string {
+	segments := strings.Split(filepath.ToSlash(path), "/")
+	for i := range segments {
+		segments[i] = url.PathEscape(segments[i])
+	}
+	return segments
 }
 
 func detectImageType(

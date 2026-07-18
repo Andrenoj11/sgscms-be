@@ -58,8 +58,6 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "Backend CMS API untuk SGS Law Firm.\n\nAdmin API menggunakan JWT Bearer Token.\nSebagian besar admin endpoint juga membutuhkan X-Timestamp, X-Nonce, dan X-Signature.\nUpload gambar hanya membutuhkan JWT karena menggunakan multipart/form-data.\n\nFormat canonical X-Signature:\nMETHOD + newline + REQUEST_URI + newline + TIMESTAMP + newline + NONCE + newline + SHA256_BODY",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	LeftDelim:        "{{",
-	RightDelim:       "}}",
 }
 
 func init() {

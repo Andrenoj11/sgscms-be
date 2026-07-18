@@ -39,13 +39,16 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host     string
-	Port     string
-	Name     string
-	User     string
-	Password string
-	SSLMode  string
-	Timezone string
+	Host          string
+	Port          string
+	Name          string
+	User          string
+	Password      string
+	SSLMode       string
+	Timezone      string
+	QueryExecMode string
+	MaxOpenConns  int
+	MaxIdleConns  int
 }
 
 type SeedAdminConfig struct {
@@ -62,17 +65,21 @@ type JWTConfig struct {
 }
 
 type StorageConfig struct {
+	Driver       string
 	Directory    string
 	BaseURL      string
 	MaxImageSize int64
+	SupabaseURL  string
+	SupabaseKey  string
+	Bucket       string
 }
 
 type SecurityConfig struct {
 	SignatureEncryptionKey []byte
-	SignatureMaxAge         time.Duration
-	CORSAllowedOrigins      []string
-	LoginRateLimit          int
-	LoginRateWindow         time.Duration
+	SignatureMaxAge        time.Duration
+	CORSAllowedOrigins     []string
+	LoginRateLimit         int
+	LoginRateWindow        time.Duration
 }
 
 func Load() (*Config, error) {
@@ -188,6 +195,22 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	databaseMaxOpenConns, err := parsePositiveIntEnv(
+		"DB_MAX_OPEN_CONNS",
+		"25",
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	databaseMaxIdleConns, err := parseNonNegativeIntEnv(
+		"DB_MAX_IDLE_CONNS",
+		"10",
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	encryptionKey, err :=
 		base64.StdEncoding.DecodeString(
 			getEnv(
@@ -261,6 +284,12 @@ func Load() (*Config, error) {
 				"DB_TIMEZONE",
 				"Asia/Jakarta",
 			),
+			QueryExecMode: getEnv(
+				"DB_QUERY_EXEC_MODE",
+				"cache_statement",
+			),
+			MaxOpenConns: databaseMaxOpenConns,
+			MaxIdleConns: databaseMaxIdleConns,
 		},
 		SeedAdmin: SeedAdminConfig{
 			Name: getEnv(
@@ -289,6 +318,10 @@ func Load() (*Config, error) {
 			RefreshTTL: refreshTTL,
 		},
 		Storage: StorageConfig{
+			Driver: getEnv(
+				"STORAGE_DRIVER",
+				"local",
+			),
 			Directory: getEnv(
 				"UPLOAD_DIRECTORY",
 				"uploads",
@@ -298,10 +331,22 @@ func Load() (*Config, error) {
 				"http://localhost:8080/uploads",
 			),
 			MaxImageSize: maxImageSize,
+			SupabaseURL: getEnv(
+				"SUPABASE_URL",
+				"",
+			),
+			SupabaseKey: getEnv(
+				"SUPABASE_SERVICE_ROLE_KEY",
+				"",
+			),
+			Bucket: getEnv(
+				"SUPABASE_STORAGE_BUCKET",
+				"cms-images",
+			),
 		},
 		Security: SecurityConfig{
 			SignatureEncryptionKey: encryptionKey,
-			SignatureMaxAge:         signatureMaxAge,
+			SignatureMaxAge:        signatureMaxAge,
 			CORSAllowedOrigins: parseCSV(
 				getEnv(
 					"CORS_ALLOWED_ORIGINS",
@@ -342,10 +387,36 @@ func validate(
 		)
 	}
 
-	if cfg.Storage.Directory == "" {
+	if cfg.Database.MaxIdleConns > cfg.Database.MaxOpenConns {
+		return fmt.Errorf(
+			"DB_MAX_IDLE_CONNS must not exceed DB_MAX_OPEN_CONNS",
+		)
+	}
+
+	if cfg.Storage.Driver != "local" && cfg.Storage.Driver != "supabase" {
+		return fmt.Errorf(
+			"STORAGE_DRIVER must be local or supabase",
+		)
+	}
+
+	if cfg.Storage.Driver == "local" && cfg.Storage.Directory == "" {
 		return fmt.Errorf(
 			"UPLOAD_DIRECTORY is required",
 		)
+	}
+
+	if cfg.Storage.Driver == "supabase" {
+		if cfg.Storage.SupabaseURL == "" {
+			return fmt.Errorf("SUPABASE_URL is required for supabase storage")
+		}
+
+		if cfg.Storage.SupabaseKey == "" {
+			return fmt.Errorf("SUPABASE_SERVICE_ROLE_KEY is required for supabase storage")
+		}
+
+		if cfg.Storage.Bucket == "" {
+			return fmt.Errorf("SUPABASE_STORAGE_BUCKET is required for supabase storage")
+		}
 	}
 
 	if cfg.Storage.BaseURL == "" {
@@ -385,8 +456,7 @@ func validate(
 			)
 		}
 
-		for _, origin :=
-			range cfg.Security.CORSAllowedOrigins {
+		for _, origin := range cfg.Security.CORSAllowedOrigins {
 			if origin == "*" {
 				return fmt.Errorf(
 					"wildcard CORS origin is not allowed in production",
@@ -435,6 +505,23 @@ func parsePositiveIntEnv(
 	if err != nil || value <= 0 {
 		return 0, fmt.Errorf(
 			"%s must be greater than zero",
+			key,
+		)
+	}
+
+	return value, nil
+}
+
+func parseNonNegativeIntEnv(
+	key string,
+	fallback string,
+) (int, error) {
+	value, err := strconv.Atoi(
+		getEnv(key, fallback),
+	)
+	if err != nil || value < 0 {
+		return 0, fmt.Errorf(
+			"%s must be zero or greater",
 			key,
 		)
 	}
